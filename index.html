@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V0.12</title>
+  <title>BiblioPerso V1.0</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -25,6 +25,14 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+
+.filter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.consistency-ok{padding:14px;border-radius:12px;background:#e8f3e8}
+.issue-card{padding:14px;border:1px solid #e8c4c4;border-radius:12px;background:#fff4f4}
+.issue-card.warning{border-color:#e5d28d;background:#fff9e8}
+.issue-title{font-weight:700;margin-bottom:6px}
+@media (max-width:560px){.filter-grid{grid-template-columns:1fr}}
 
 .upcoming-card{padding:14px;border:1px solid #e1d9cf;border-radius:12px;background:#fcfaf7}
 .upcoming-card.available{border-color:#d6b65c;background:#fff9e8}
@@ -104,7 +112,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 0.12 · sorties à venir</p>
+      <p class="subtitle">Version 1.0 · prête pour l’inventaire</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -139,8 +147,55 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
       <label class="search-box">
         <span>🔎</span>
-        <input id="searchInput" type="search" placeholder="Titre, auteur, série ou ISBN" autocomplete="off">
+        <input id="searchInput" type="search" placeholder="Titre, auteur, univers, cycle ou ISBN" autocomplete="off">
       </label>
+      <button id="filtersBtn">⚙️ Filtres de recherche</button>
+      <section id="filtersPanel" class="panel hidden">
+        <div class="filter-grid">
+          <label>Catégorie
+            <select id="filterCategory">
+              <option value="">Toutes</option>
+              <option value="BD">BD</option>
+              <option value="Roman">Roman</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </label>
+          <label>Statut
+            <select id="filterStatus">
+              <option value="">Tous</option>
+              <option value="owned">Possédé</option>
+              <option value="buy">À acheter</option>
+              <option value="wish">Souhait</option>
+              <option value="loaned">Prêté</option>
+            </select>
+          </label>
+          <label>Type
+            <select id="filterFormat">
+              <option value="">Tous</option>
+              <option>Broché</option><option>Poche</option><option>Relié</option>
+              <option>Album cartonné</option><option>Intégrale</option><option>Omnibus</option>
+              <option>Recueil</option><option>Coffret</option><option>Autre</option>
+            </select>
+          </label>
+          <label>Lecture
+            <select id="filterRead">
+              <option value="">Tous</option>
+              <option value="yes">Lu</option>
+              <option value="no">Non lu</option>
+            </select>
+          </label>
+          <label>Favori
+            <select id="filterFavorite">
+              <option value="">Tous</option>
+              <option value="yes">Favoris uniquement</option>
+            </select>
+          </label>
+          <label>Emplacement
+            <input id="filterLocation" placeholder="Ex. D4">
+          </label>
+        </div>
+        <button id="clearFiltersBtn">Effacer les filtres</button>
+      </section>
 
       <div class="primary-actions">
         <button id="addBtn" class="primary">＋ Ajouter un ouvrage</button>
@@ -278,6 +333,16 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+    <section id="consistencyView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Contrôle de cohérence</h2>
+      </div>
+      <div id="consistencySummary" class="panel"></div>
+      <div id="consistencyResults" class="results empty">Aucune anomalie détectée.</div>
+    </section>
+
     <section id="upcomingView" class="view">
       <div class="view-title">
         <button class="back-btn" data-back>←</button>
@@ -370,6 +435,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <h2>Données</h2>
       </div>
       <div class="primary-actions">
+        <button id="consistencyBtn">🧭 Contrôle de cohérence</button>
         <button id="exportBtn">Exporter la sauvegarde JSON</button>
         <label class="file-button">Importer une sauvegarde
           <input id="importInput" type="file" accept="application/json">
@@ -383,7 +449,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Page « Sorties à venir », tri par date, distinction entre annoncé et déjà disponible, et ajout direct à la liste « À acheter ».</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Recherche avancée avec filtres, contrôle de cohérence, détection des ISBN invalides, doublons possibles et informations manquantes.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -470,7 +536,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"0.12",
+    version:"1.0",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -785,6 +851,93 @@ function applySmartDefaults(){
   if(!$("collection").value) $("collection").value=last.collection||"";
 }
 
+
+function activeFilters(){
+  return {
+    category:$("filterCategory")?.value || "",
+    status:$("filterStatus")?.value || "",
+    format:$("filterFormat")?.value || "",
+    read:$("filterRead")?.value || "",
+    favorite:$("filterFavorite")?.value || "",
+    location:($("filterLocation")?.value || "").trim().toUpperCase().replace(/\s+/g,"")
+  };
+}
+function matchesFilters(b){
+  const f = activeFilters();
+  if(f.category && b.category !== f.category) return false;
+  if(f.status && b.status !== f.status) return false;
+  if(f.format && b.format !== f.format) return false;
+  if(f.read === "yes" && !b.read) return false;
+  if(f.read === "no" && b.read) return false;
+  if(f.favorite === "yes" && !b.favorite) return false;
+  if(f.location && locationOf(b) !== f.location) return false;
+  return true;
+}
+function normalizeIsbn(isbn){return cleanIsbn(isbn);}
+function duplicateKey(b){
+  return [normalize(b.title),normalize(b.author),normalize(universeOf(b)),normalize(cycleOf(b)),String(b.volume||"")].join("|");
+}
+function runConsistencyCheck(){
+  const issues = [];
+  const isbnMap = new Map();
+  const keyMap = new Map();
+
+  books.forEach(b=>{
+    const isbn = normalizeIsbn(b.isbn);
+    if(isbn){
+      if(!isbnMap.has(isbn)) isbnMap.set(isbn,[]);
+      isbnMap.get(isbn).push(b);
+      if(!validIsbn(isbn)) issues.push({type:"error",title:"ISBN invalide",text:`${b.title} — ${isbn}`});
+    }
+
+    const key = duplicateKey(b);
+    if(!keyMap.has(key)) keyMap.set(key,[]);
+    keyMap.get(key).push(b);
+
+    if(b.status==="owned" && !locationOf(b)) issues.push({type:"warning",title:"Emplacement manquant",text:b.title});
+    if(universeOf(b) && b.volume && !cycleOf(b) && Number(b.publishedVolumes||0)>0){
+      issues.push({type:"warning",title:"Cycle non renseigné",text:`${b.title} — univers ${universeOf(b)}`});
+    }
+    if(Number(b.publishedVolumes||0) && Number(b.volume||0) > Number(b.publishedVolumes||0)){
+      issues.push({type:"warning",title:"Tome supérieur au nombre de tomes parus",text:`${b.title} — tome ${b.volume} / ${b.publishedVolumes}`});
+    }
+    if(b.nextReleaseDate && !b.nextVolume){
+      issues.push({type:"warning",title:"Date annoncée sans prochain tome",text:b.title});
+    }
+  });
+
+  isbnMap.forEach((arr,isbn)=>{
+    if(arr.length>1) issues.push({type:"warning",title:"ISBN en double",text:`${isbn} — ${arr.map(b=>b.title).join(" / ")}`});
+  });
+  keyMap.forEach(arr=>{
+    if(arr.length>1){
+      const distinctEditions = new Set(arr.map(b=>[b.format,b.publisher,b.collection,b.isbn].join("|")));
+      if(distinctEditions.size===1){
+        issues.push({type:"warning",title:"Doublon possible",text:arr.map(b=>b.title).join(" / ")});
+      }
+    }
+  });
+
+  $("consistencySummary").innerHTML = issues.length
+    ? `<strong>${issues.length} point(s) à vérifier</strong><p class="small-note">Les avertissements ne signifient pas forcément qu’il y a une erreur.</p>`
+    : `<div class="consistency-ok"><strong>Aucune anomalie détectée.</strong></div>`;
+
+  const box = $("consistencyResults");
+  if(!issues.length){
+    box.className="results empty";
+    box.textContent="Tout est cohérent.";
+    return;
+  }
+  box.className="results";
+  box.innerHTML="";
+  issues.forEach(i=>{
+    const el=document.createElement("div");
+    el.className=`issue-card ${i.type==="warning"?"warning":""}`;
+    el.innerHTML=`<div class="issue-title">${escapeHtml(i.title)}</div><div class="meta">${escapeHtml(i.text)}</div>`;
+    box.appendChild(el);
+  });
+}
+
 function render() {
   $("bdCount").textContent = books.filter(b=>b.category==="BD" && b.status==="owned").length;
   $("romanCount").textContent = books.filter(b=>b.category==="Roman" && b.status==="owned").length;
@@ -798,8 +951,8 @@ function render() {
 
   const q = normalize($("searchInput").value);
   let filtered = books.filter(b => {
-    if (!q) return true;
-    return [b.title,b.author,universeOf(b),cycleOf(b),b.isbn,b.collection,b.publisher].some(x=>normalize(x).includes(q));
+    const textMatch = !q || [b.title,b.author,universeOf(b),cycleOf(b),b.isbn,b.collection,b.publisher,b.tags].some(x=>normalize(x).includes(q));
+    return textMatch && matchesFilters(b);
   });
 
   const activeFilter = document.querySelector(".stat-card.active")?.dataset.filter;
@@ -1092,6 +1245,23 @@ $("stopCameraBtn").addEventListener("click",stopCamera);
 $("manualScanSearch").addEventListener("click",()=>handleScannedIsbn($("manualScanIsbn").value));
 $("manualScanIsbn").addEventListener("keydown",e=>{
   if(e.key==="Enter") handleScannedIsbn(e.target.value);
+});
+
+
+$("filtersBtn").addEventListener("click",()=>{
+  const hidden=$("filtersPanel").classList.toggle("hidden");
+  $("filtersBtn").textContent=hidden ? "⚙️ Filtres de recherche" : "✕ Masquer les filtres";
+});
+["filterCategory","filterStatus","filterFormat","filterRead","filterFavorite","filterLocation"].forEach(id=>{
+  $(id).addEventListener(id==="filterLocation"?"input":"change",render);
+});
+$("clearFiltersBtn").addEventListener("click",()=>{
+  ["filterCategory","filterStatus","filterFormat","filterRead","filterFavorite","filterLocation"].forEach(id=>$(id).value="");
+  render();
+});
+$("consistencyBtn").addEventListener("click",()=>{
+  runConsistencyCheck();
+  showView("consistencyView");
 });
 
 $("searchInput").addEventListener("input",render);
