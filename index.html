@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4efe7">
+  <title>BiblioPerso V0.8</title>
+    <style>
+*{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
+body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
+h1,h2,h3,p{margin-top:0}.app-header h1{font-size:1.35rem;margin-bottom:2px}.subtitle,.small-note{color:#6f675e;font-size:.9rem;margin:0}
+main{max-width:760px;margin:auto;padding:18px 16px calc(32px + env(safe-area-inset-bottom))}
+.view{display:none}.view.active{display:block}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat-card,.panel,button,input,select,textarea,.file-button{border-radius:14px}.stat-card{background:#fff;border:1px solid #ddd4c8;padding:16px 8px}.stat-card strong{display:block;font-size:1.65rem}.stat-card span{color:#6f675e}
+.search-box{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #d8d0c4;border-radius:14px;padding:11px 13px;margin-bottom:14px}.search-box input{border:0;padding:0;background:transparent;width:100%;font-size:1rem;outline:none}
+.primary-actions{display:grid;gap:10px;margin-bottom:18px}button,.file-button{font:inherit;padding:13px 15px;border:1px solid #cfc5b7;background:#fff;color:#1d1b18;text-align:center;cursor:pointer}.primary{background:#322c25;color:white;border-color:#322c25}.danger{background:#fff2f2;color:#9b1c1c;border-color:#e6bcbc}.icon-btn,.back-btn{width:44px;height:44px;padding:0;border-radius:50%}
+.panel{background:#fff;border:1px solid #ddd4c8;padding:15px;margin-top:14px}.panel-head,.view-title,.dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.panel-head h2{font-size:1.05rem;margin:0}.results{display:grid;gap:8px;margin-top:12px}.results.empty{color:#756d64}.result-item{padding:12px;border:1px solid #e1d9cf;border-radius:12px;background:#fcfaf7;text-align:left}.result-item strong{display:block}.meta{font-size:.88rem;color:#6f675e;margin-top:3px}.badge{display:inline-block;margin-top:7px;padding:3px 8px;border-radius:999px;background:#eee8df;font-size:.78rem}.badge.buy{background:#fff1c7}.badge.loaned{background:#ffe1e1}.badge.wish{background:#e8e3ff}
+.view-title{justify-content:flex-start;margin-bottom:16px}.view-title h2{margin:0}.form-grid{display:grid;gap:13px}.form-grid label,.panel label{display:grid;gap:6px;font-weight:600;font-size:.92rem}input,select,textarea{width:100%;padding:12px;border:1px solid #cfc5b7;background:#fff;font:inherit}.two-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}.check-label{display:flex!important;grid-template-columns:auto 1fr!important;align-items:center}.check-label input{width:auto}.form-actions{display:flex;justify-content:space-between;gap:10px;margin-top:5px}.hidden{display:none!important}
+dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow:0 24px 80px rgba(0,0,0,.25)}dialog::backdrop{background:rgba(0,0,0,.4)}#detailBody{line-height:1.55;margin:12px 0 18px}.detail-row{padding:7px 0;border-bottom:1px solid #eee6dc}.file-button input{display:none}
+
+
+
+
+
+.install-steps{padding-left:22px;line-height:1.7}
+.install-steps li{margin-bottom:10px}
+
+.snapshot-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;border:1px solid #e1d9cf;border-radius:12px;background:#fcfaf7}
+.snapshot-meta{font-size:.85rem;color:#6f675e}
+.snapshot-item button{padding:8px 10px}
+
+.scan-panel{display:grid;gap:12px}
+.scan-video{width:100%;max-height:360px;object-fit:cover;border-radius:14px;background:#111}
+.scan-placeholder{min-height:210px;display:grid;place-items:center;text-align:center;padding:24px;border:2px dashed #d4cabc;border-radius:14px;background:#faf7f2}
+.scan-placeholder p{max-width:430px;margin:0}
+.scan-icon{font-size:3rem;line-height:1}
+.scan-actions{display:flex;gap:10px;flex-wrap:wrap}
+.loading{opacity:.65;pointer-events:none}
+
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px}
+.tab{padding:10px 8px;background:#eee8df;border-color:#d7cec2}
+.tab.active{background:#322c25;color:#fff;border-color:#322c25}
+.tab-panel{display:none;gap:13px}
+.tab-panel.active{display:grid}
+.favorite-mark{font-size:1rem;margin-left:6px}
+.progress-wrap{margin:12px 0}
+.progress-track{height:10px;background:#e8e0d6;border-radius:999px;overflow:hidden}
+.progress-bar{height:100%;background:#322c25}
+.progress-label{font-size:.85rem;color:#6f675e;margin-top:6px}
+
+.series-card{padding:14px;border:1px solid #e1d9cf;border-radius:12px;background:#fcfaf7;text-align:left}
+.series-card strong{display:block;font-size:1.05rem}
+.volume-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:8px;margin:12px 0}
+.volume-chip{padding:10px 6px;border-radius:10px;text-align:center;background:#e8f3e8;border:1px solid #b9d6b9}
+.volume-chip.missing{background:#fff0f0;border-color:#e7bcbc}
+.volume-chip.covered{background:#eef0ff;border-color:#c9ccef}
+.section-label{margin-top:16px;margin-bottom:8px;font-weight:700}
+.smart-note{padding:10px 12px;border-radius:12px;background:#f0ece6;color:#5f584f;font-size:.88rem}
+
+@media (max-width:420px){.stats-grid{gap:7px}.stat-card{padding:13px 5px}.stat-card strong{font-size:1.4rem}}
+
+</style>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BiblioPerso">
+
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>BiblioPerso</h1>
+      <p class="subtitle">Version 0.8 · installable sur iPhone</p>
+    </div>
+    <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
+  </header>
+
+  <main>
+    <section id="homeView" class="view active">
+      <div class="stats-grid">
+        <button class="stat-card" data-filter="BD"><strong id="bdCount">0</strong><span>BD</span></button>
+        <button class="stat-card" data-filter="Roman"><strong id="romanCount">0</strong><span>Romans</span></button>
+        <button class="stat-card" data-filter="Autre"><strong id="otherCount">0</strong><span>Autres</span></button>
+      </div>
+
+      <label class="search-box">
+        <span>🔎</span>
+        <input id="searchInput" type="search" placeholder="Titre, auteur, série ou ISBN" autocomplete="off">
+      </label>
+
+      <div class="primary-actions">
+        <button id="addBtn" class="primary">＋ Ajouter un ouvrage</button>
+        <button id="scanBtn">📷 Scanner un ISBN</button>
+        <button id="inventoryBtn">▦ Inventaire par étagère</button>
+        <button id="wishlistBtn">🛒 À acheter</button>
+        <button id="seriesBtn">📚 Séries</button>
+        <button id="quickBackupBtn">💾 Sauvegarder ma bibliothèque</button>
+        <button id="installHelpBtn">📱 Installer sur iPhone</button>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Résultats</h2>
+          <span id="resultCount">0</span>
+        </div>
+        <div id="results" class="results empty">Aucun ouvrage enregistré.</div>
+      </section>
+    </section>
+
+    <section id="formView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2 id="formTitle">Ajouter un ouvrage</h2>
+      </div>
+
+      <form id="bookForm" class="form-grid">
+        <input type="hidden" id="bookId">
+
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="generalTab">Général</button>
+          <button type="button" class="tab" data-tab="editionTab">Édition</button>
+          <button type="button" class="tab" data-tab="libraryTab">Bibliothèque</button>
+        </div>
+
+        <section id="generalTab" class="tab-panel active">
+          <label>Catégorie *
+            <select id="category" required>
+              <option value="BD">BD</option>
+              <option value="Roman">Roman</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </label>
+          <label>Titre *<input id="title" required></label>
+          <label>Auteur *<input id="author" required></label>
+          <label>Série<input id="series"></label>
+          <label>Tome<input id="volume" inputmode="decimal" placeholder="Ex. 3 ou 3.5"></label>
+          <label>Contient les tomes<input id="containsVolumes" placeholder="Ex. 1-3 ou 1,2,4"></label>
+        </section>
+
+        <section id="editionTab" class="tab-panel">
+          <label>Type *
+            <select id="format" required>
+              <option>Broché</option><option>Poche</option><option>Relié</option>
+              <option>Album cartonné</option><option>Intégrale</option><option>Omnibus</option>
+              <option>Recueil</option><option>Coffret</option><option>Autre</option>
+            </select>
+          </label>
+          <label>Collection<input id="collection"></label>
+          <label>ISBN<input id="isbn" inputmode="numeric" autocomplete="off"></label>
+          <label>Éditeur<input id="publisher"></label>
+          <label>Année<input id="year" inputmode="numeric"></label>
+          <label>Nombre d’exemplaires<input id="quantity" type="number" min="1" value="1"></label>
+        </section>
+
+        <section id="libraryTab" class="tab-panel">
+          <label>Emplacement *<input id="location" required maxlength="8" placeholder="Ex. D4"></label>
+          <label>Statut
+            <select id="status">
+              <option value="owned">Possédé</option><option value="buy">À acheter</option>
+              <option value="wish">Souhait</option><option value="loaned">Prêté</option>
+            </select>
+          </label>
+          <label>État
+            <select id="condition">
+              <option>Neuf</option><option>Très bon</option><option selected>Bon</option>
+              <option>Moyen</option><option>À remplacer</option>
+            </select>
+          </label>
+          <label class="check-label"><input id="read" type="checkbox"> Lu</label>
+          <label class="check-label"><input id="favorite" type="checkbox"> Favori</label>
+          <label>Étiquettes<input id="tags" placeholder="Ex. dédicacé, cadeau, collection"></label>
+          <label>Commentaire<textarea id="notes" rows="3"></textarea></label>
+        </section>
+
+        <div class="form-actions">
+          <button type="button" id="deleteBtn" class="danger hidden">Supprimer</button>
+          <button type="submit" class="primary">Enregistrer</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="inventoryView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Inventaire par étagère</h2>
+      </div>
+
+      <div class="panel">
+        <label>Emplacement
+          <input id="inventoryLocation" maxlength="8" placeholder="Ex. A1">
+        </label>
+        <button id="startInventory" class="primary">Commencer</button>
+      </div>
+
+      <div id="inventorySession" class="panel hidden">
+        <h3 id="inventoryTitle">Étagère</h3>
+        <p><strong id="inventoryCount">0</strong> ouvrage(s) enregistré(s) pendant cette session.</p>
+        <button id="inventoryAdd" class="primary">＋ Ajouter le prochain ouvrage</button>
+        <button id="finishInventory">✓ Terminer l’étagère</button>
+      </div>
+    </section>
+
+
+
+
+    <section id="installView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Installer sur iPhone</h2>
+      </div>
+      <div class="panel">
+        <ol class="install-steps">
+          <li>Ouvre l’adresse de BiblioPerso dans <strong>Safari</strong>.</li>
+          <li>Touche le bouton <strong>Partager</strong>.</li>
+          <li>Choisis <strong>Sur l’écran d’accueil</strong>.</li>
+          <li>Valide avec <strong>Ajouter</strong>.</li>
+        </ol>
+        <p class="small-note">L’application s’ouvrira ensuite depuis une icône, comme une application classique.</p>
+      </div>
+      <div class="panel">
+        <h3>Important</h3>
+        <p class="small-note">La caméra de l’iPhone nécessite une adresse sécurisée en HTTPS. Le fichier local seul ne peut pas activer le scan caméra.</p>
+      </div>
+    </section>
+
+    <section id="scanView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Scanner un ISBN</h2>
+      </div>
+
+      <div class="panel scan-panel">
+        <video id="scanVideo" class="scan-video hidden" playsinline muted></video>
+        <div id="scanPlaceholder" class="scan-placeholder">
+          <div class="scan-icon">▦</div>
+          <strong>Scanner le code-barres du livre</strong>
+          <p class="small-note">La caméra fonctionne lorsque l’application est ouverte depuis une adresse sécurisée. La saisie manuelle reste toujours disponible.</p>
+        </div>
+
+        <div class="scan-actions">
+          <button id="startCameraBtn" class="primary">Ouvrir la caméra</button>
+          <button id="stopCameraBtn" class="hidden">Arrêter la caméra</button>
+        </div>
+
+        <div id="scanStatus" class="smart-note">Prêt.</div>
+      </div>
+
+      <div class="panel">
+        <label>Saisir ou coller un ISBN
+          <input id="manualScanIsbn" inputmode="numeric" placeholder="978…" autocomplete="off">
+        </label>
+        <button id="manualScanSearch" class="primary">Rechercher les informations</button>
+      </div>
+    </section>
+
+    <section id="seriesView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Séries</h2>
+      </div>
+      <label class="search-box">
+        <span>🔎</span>
+        <input id="seriesSearchInput" type="search" placeholder="Rechercher une série" autocomplete="off">
+      </label>
+      <div id="seriesResults" class="results empty">Aucune série enregistrée.</div>
+    </section>
+
+    <section id="menuView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Données</h2>
+      </div>
+      <div class="primary-actions">
+        <button id="exportBtn">Exporter la sauvegarde JSON</button>
+        <label class="file-button">Importer une sauvegarde
+          <input id="importInput" type="file" accept="application/json">
+        </label>
+        <button id="demoBtn">Ajouter des données de démonstration</button>
+        <button id="clearBtn" class="danger">Effacer toutes les données</button>
+      </div>
+      
+      <div class="panel">
+        <h3>Sauvegardes locales automatiques</h3>
+        <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
+        <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
+      </div>
+<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Version PWA installable sur iPhone, fonctionnement hors ligne après la première ouverture et préparation complète du scan caméra en HTTPS.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+    </section>
+  </main>
+
+  <dialog id="detailDialog">
+    <div class="dialog-head">
+      <h2 id="detailTitle"></h2>
+      <button id="closeDialog" class="icon-btn">✕</button>
+    </div>
+    <div id="detailBody"></div>
+    <button id="editBookBtn" class="primary">Modifier</button>
+  </dialog>
+
+
+  <dialog id="seriesDialog">
+    <div class="dialog-head">
+      <h2 id="seriesDialogTitle"></h2>
+      <button id="closeSeriesDialog" class="icon-btn">✕</button>
+    </div>
+    <div id="seriesDialogBody"></div>
+  </dialog>
+
+  <script>
+const STORAGE_KEY = "biblioperso_books_v02";
+const SNAPSHOT_KEY = "biblioperso_snapshots_v07";
+let books = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let currentBookId = null;
+let inventoryLocation = null;
+let inventoryStartCount = 0;
+
+const $ = (id) => document.getElementById(id);
+const views = [...document.querySelectorAll(".view")];
+
+
+function getSnapshots(){
+  try{return JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || "[]");}
+  catch{return [];}
+}
+function makeSnapshot(reason){
+  const snapshots = getSnapshots();
+  snapshots.unshift({
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+    createdAt: new Date().toISOString(),
+    reason,
+    books: JSON.parse(JSON.stringify(books))
+  });
+  localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshots.slice(0,10)));
+  renderSnapshots();
+}
+function formatDate(iso){
+  try{return new Intl.DateTimeFormat("fr-FR",{dateStyle:"short",timeStyle:"short"}).format(new Date(iso));}
+  catch{return iso;}
+}
+function renderSnapshots(){
+  const box = $("snapshotList");
+  if(!box) return;
+  const snapshots = getSnapshots();
+  if(!snapshots.length){
+    box.className = "results empty";
+    box.textContent = "Aucune sauvegarde automatique.";
+    return;
+  }
+  box.className = "results";
+  box.innerHTML = "";
+  snapshots.forEach(s=>{
+    const row = document.createElement("div");
+    row.className = "snapshot-item";
+    row.innerHTML = `<div><strong>${escapeHtml(s.reason)}</strong><div class="snapshot-meta">${formatDate(s.createdAt)} · ${s.books.length} ouvrage(s)</div></div>`;
+    const btn = document.createElement("button");
+    btn.textContent = "Restaurer";
+    btn.addEventListener("click",()=>{
+      if(confirm(`Restaurer la sauvegarde du ${formatDate(s.createdAt)} ? Les données actuelles seront d’abord sauvegardées.`)){
+        makeSnapshot("Avant restauration");
+        books = JSON.parse(JSON.stringify(s.books));
+        save(false);
+        showView("homeView");
+        alert("Sauvegarde restaurée.");
+      }
+    });
+    row.appendChild(btn);
+    box.appendChild(row);
+  });
+}
+function downloadBackup(){
+  const payload = {
+    app:"BiblioPerso",
+    version:"0.8",
+    exportedAt:new Date().toISOString(),
+    books
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = URL.createObjectURL(blob);
+  a.download = `BiblioPerso_sauvegarde_${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+function save(createSnapshot=true) {
+  if(createSnapshot) makeSnapshot("Avant modification");
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+  render();
+  renderSnapshots();
+}
+function showView(id) {
+  if(id !== "scanView" && typeof stopCamera === "function") stopCamera();
+  views.forEach(v => v.classList.toggle("active", v.id === id));
+  window.scrollTo({top:0, behavior:"instant"});
+}
+function normalize(s){return String(s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+function statusLabel(s){return ({owned:"Possédé",buy:"À acheter",wish:"Souhait",loaned:"Prêté"})[s] || s;}
+function categoryLabel(c){return c === "Roman" ? "Roman" : c;}
+function locationOf(b){return (b.location || `${(b.column||"").toUpperCase()}${b.shelf||""}`).toUpperCase();}
+
+
+function parseContainedVolumes(text){
+  const out = new Set();
+  String(text||"").split(",").map(x=>x.trim()).filter(Boolean).forEach(part=>{
+    if(part.includes("-")){
+      const [a,b]=part.split("-").map(Number);
+      if(Number.isFinite(a)&&Number.isFinite(b)){
+        for(let i=Math.min(a,b);i<=Math.max(a,b);i++) out.add(String(i));
+      }
+    } else if(part) out.add(String(part));
+  });
+  return [...out];
+}
+function buildSeriesMap(){
+  const map = new Map();
+  books.filter(b=>b.series).forEach(b=>{
+    if(!map.has(b.series)) map.set(b.series,[]);
+    map.get(b.series).push(b);
+  });
+  return map;
+}
+function renderSeries(){
+  const q = normalize($("seriesSearchInput")?.value || "");
+  const series = [...buildSeriesMap().entries()]
+    .filter(([name])=>!q || normalize(name).includes(q))
+    .sort((a,b)=>a[0].localeCompare(b[0],"fr"));
+  const box = $("seriesResults");
+  if(!box) return;
+  if(!series.length){box.className="results empty";box.textContent="Aucune série enregistrée.";return;}
+  box.className="results"; box.innerHTML="";
+  series.forEach(([name,items])=>{
+    const owned = items.filter(x=>x.status==="owned").length;
+    const btn=document.createElement("button");
+    btn.className="series-card";
+    btn.innerHTML=`<strong>${escapeHtml(name)}</strong><div class="meta">${owned} ouvrage(s) possédé(s) · ${items.length} fiche(s)</div>`;
+    btn.onclick=()=>openSeries(name);
+    box.appendChild(btn);
+  });
+}
+function openSeries(name){
+  const items=(buildSeriesMap().get(name)||[]).sort((a,b)=>(parseFloat(a.volume)||9999)-(parseFloat(b.volume)||9999));
+  $("seriesDialogTitle").textContent=name;
+  const present=new Set();
+  const explicit=[];
+  items.filter(x=>x.status==="owned").forEach(b=>{
+    if(b.volume) present.add(String(b.volume));
+    parseContainedVolumes(b.containsVolumes).forEach(v=>present.add(v));
+    explicit.push(b);
+  });
+  const nums=[...present].map(Number).filter(Number.isFinite);
+  const max=nums.length?Math.max(...nums):0;
+  const chips=[];
+  for(let i=1;i<=max;i++){
+    chips.push(`<div class="volume-chip ${present.has(String(i))?"":"missing"}">${i}</div>`);
+  }
+  const ownedList=explicit.map(b=>`<div class="detail-row"><strong>${escapeHtml(b.title)}</strong>${b.volume?` — tome ${escapeHtml(b.volume)}`:""}${b.containsVolumes?` — couvre ${escapeHtml(b.containsVolumes)}`:""}<br><span class="meta">📍 ${escapeHtml(locationOf(b))} · ${escapeHtml(b.format)}</span></div>`).join("");
+  const ownedCount = nums.length;
+  const percent = max ? Math.round((ownedCount/max)*100) : 0;
+  $("seriesDialogBody").innerHTML = `
+    <div class="smart-note">Les cases vertes correspondent aux tomes possédés, y compris ceux couverts par une intégrale ou un recueil.</div>
+    ${max ? `<div class="progress-wrap"><div class="progress-track"><div class="progress-bar" style="width:${percent}%"></div></div><div class="progress-label">${ownedCount} tome(s) couvert(s) sur ${max} · ${percent}%</div></div>` : ""}
+    ${chips.length?`<div class="section-label">Progression</div><div class="volume-grid">${chips.join("")}</div>`:""}
+    <div class="section-label">Ouvrages enregistrés</div>
+    ${ownedList || "<p>Aucun ouvrage possédé.</p>"}
+  `;
+  $("seriesDialog").showModal();
+}
+function applySmartDefaults(){
+  const author=$("author").value.trim();
+  const series=$("series").value.trim();
+  const candidates=books.filter(b=>(series && normalize(b.series)===normalize(series)) || (!series && author && normalize(b.author)===normalize(author)));
+  if(!candidates.length) return;
+  const last=candidates[candidates.length-1];
+  if(!$("location").value) $("location").value=locationOf(last);
+  if(!$("category").value) $("category").value=last.category||"Roman";
+  if(!$("format").value) $("format").value=last.format||"Broché";
+  if(!$("publisher").value) $("publisher").value=last.publisher||"";
+  if(!$("collection").value) $("collection").value=last.collection||"";
+}
+
+function render() {
+  $("bdCount").textContent = books.filter(b=>b.category==="BD" && b.status==="owned").length;
+  $("romanCount").textContent = books.filter(b=>b.category==="Roman" && b.status==="owned").length;
+  $("otherCount").textContent = books.filter(b=>b.category==="Autre" && b.status==="owned").length;
+
+  const q = normalize($("searchInput").value);
+  let filtered = books.filter(b => {
+    if (!q) return true;
+    return [b.title,b.author,b.series,b.isbn,b.collection,b.publisher].some(x=>normalize(x).includes(q));
+  });
+
+  const activeFilter = document.querySelector(".stat-card.active")?.dataset.filter;
+  if (activeFilter) filtered = filtered.filter(b=>b.category===activeFilter);
+
+  filtered.sort((a,b)=>a.title.localeCompare(b.title,"fr"));
+  renderSeries();
+  $("resultCount").textContent = filtered.length;
+  const box = $("results");
+  if (!filtered.length) {
+    box.className = "results empty";
+    box.textContent = books.length ? "Aucun résultat." : "Aucun ouvrage enregistré.";
+    return;
+  }
+  box.className = "results";
+  box.innerHTML = "";
+  filtered.forEach(b=>{
+    const btn = document.createElement("button");
+    btn.className = "result-item";
+    btn.innerHTML = `<strong>${escapeHtml(b.title)}${b.favorite ? '<span class="favorite-mark">★</span>' : ''}</strong>
+      <div class="meta">${escapeHtml(b.author)}${b.series ? " · "+escapeHtml(b.series) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
+      <div class="meta">${categoryLabel(b.category)} · ${escapeHtml(b.format)} · 📍 ${escapeHtml(locationOf(b))}</div>
+      <span class="badge ${b.status}">${statusLabel(b.status)}</span>${Number(b.quantity||1)>1 ? `<span class="badge">×${Number(b.quantity)}</span>` : ""}`;
+    btn.addEventListener("click",()=>openDetail(b.id));
+    box.appendChild(btn);
+  });
+}
+
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+
+function openForm(book=null) {
+  $("bookForm").reset();
+  $("formTitle").textContent = book ? "Modifier l’ouvrage" : "Ajouter un ouvrage";
+  $("deleteBtn").classList.toggle("hidden", !book);
+  currentBookId = book?.id || null;
+  const fields = ["category","title","author","series","volume","format","containsVolumes","collection","isbn","publisher","year","location","status","condition","tags","notes","quantity"];
+  fields.forEach(f=>{ if(book && book[f] !== undefined) $(f).value = book[f]; });
+  $("read").checked = !!book?.read;
+  $("favorite").checked = !!book?.favorite;
+  if (book && !$("location").value) $("location").value = locationOf(book);
+  if (!book && inventoryLocation) $("location").value = inventoryLocation.location;
+  if (!book) $("quantity").value = "1";
+  activateTab("generalTab");
+  showView("formView");
+}
+
+function getFormData(){
+  const loc = $("location").value.trim().toUpperCase().replace(/\s+/g,"");
+  const m = loc.match(/^([A-Z]+)(\d+)$/);
+  return {
+    id: currentBookId || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+    category:$("category").value,
+    title:$("title").value.trim(),
+    author:$("author").value.trim(),
+    series:$("series").value.trim(),
+    volume:$("volume").value.trim(),
+    format:$("format").value,
+    containsVolumes:$("containsVolumes").value.trim(),
+    collection:$("collection").value.trim(),
+    isbn:$("isbn").value.replace(/[^0-9Xx]/g,""),
+    publisher:$("publisher").value.trim(),
+    year:$("year").value.trim(),
+    location:loc,
+    column:m ? m[1] : "",
+    shelf:m ? m[2] : "",
+    quantity:Math.max(1, Number($("quantity").value || 1)),
+    status:$("status").value,
+    condition:$("condition").value,
+    read:$("read").checked,
+    favorite:$("favorite").checked,
+    tags:$("tags").value.trim(),
+    notes:$("notes").value.trim()
+  };
+}
+
+function openDetail(id){
+  const b = books.find(x=>x.id===id); if(!b) return;
+  currentBookId = id;
+  $("detailTitle").textContent = b.title;
+  const rows = [
+    ["Auteur",b.author],["Catégorie",b.category],["Série",b.series],["Tome",b.volume],
+    ["Type",b.format],["Contient les tomes",b.containsVolumes],["Collection",b.collection],
+    ["ISBN",b.isbn],["Éditeur",b.publisher],["Année",b.year],["Nombre d’exemplaires",b.quantity||1],["Emplacement",locationOf(b)],
+    ["Statut",statusLabel(b.status)],["État",b.condition||""],["Lu",b.read?"Oui":"Non"],["Favori",b.favorite?"Oui":"Non"],["Étiquettes",b.tags||""],["Commentaire",b.notes]
+  ].filter(r=>r[1]);
+  $("detailBody").innerHTML = rows.map(([k,v])=>`<div class="detail-row"><strong>${escapeHtml(k)} :</strong> ${escapeHtml(v)}</div>`).join("");
+  $("detailDialog").showModal();
+}
+
+
+function activateTab(id){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===id));
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.toggle("active", p.id===id));
+}
+document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>activateTab(btn.dataset.tab)));
+let scanStream = null;
+let scanLoopActive = false;
+
+function cleanIsbn(value){
+  return String(value || "").replace(/[^0-9Xx]/g,"").toUpperCase();
+}
+
+function validIsbn(isbn){
+  if(isbn.length === 10){
+    let sum = 0;
+    for(let i=0;i<10;i++){
+      const digit = (i===9 && isbn[i]==="X") ? 10 : Number(isbn[i]);
+      if(!Number.isFinite(digit)) return false;
+      sum += digit * (10-i);
+    }
+    return sum % 11 === 0;
+  }
+  if(isbn.length === 13){
+    const sum = isbn.slice(0,12).split("").reduce((acc,d,i)=>acc + Number(d)*(i%2?3:1),0);
+    const check = (10-(sum%10))%10;
+    return check === Number(isbn[12]);
+  }
+  return false;
+}
+
+function setScanStatus(message){
+  $("scanStatus").textContent = message;
+}
+
+async function fetchBookMetadata(isbn){
+  try{
+    const openLibraryUrl = `https://openlibrary.org/api/books?bibkeys=ISBN:${encodeURIComponent(isbn)}&jscmd=data&format=json`;
+    const response = await fetch(openLibraryUrl);
+    if(response.ok){
+      const data = await response.json();
+      const item = data[`ISBN:${isbn}`];
+      if(item){
+        return {
+          title:item.title || "",
+          author:(item.authors || []).map(a=>a.name).join(", "),
+          publisher:(item.publishers || []).map(p=>p.name).join(", "),
+          year:String(item.publish_date || "").match(/\d{4}/)?.[0] || ""
+        };
+      }
+    }
+  }catch(error){}
+
+  try{
+    const googleUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbn)}&maxResults=1`;
+    const response = await fetch(googleUrl);
+    if(response.ok){
+      const data = await response.json();
+      const info = data.items?.[0]?.volumeInfo;
+      if(info){
+        return {
+          title:info.title || "",
+          author:(info.authors || []).join(", "),
+          publisher:info.publisher || "",
+          year:String(info.publishedDate || "").match(/\d{4}/)?.[0] || ""
+        };
+      }
+    }
+  }catch(error){}
+  return null;
+}
+
+async function handleScannedIsbn(rawIsbn){
+  const isbn = cleanIsbn(rawIsbn);
+  $("manualScanIsbn").value = isbn;
+
+  if(!validIsbn(isbn)){
+    setScanStatus("ISBN non valide. Vérifie les chiffres.");
+    return;
+  }
+
+  const existing = books.find(b=>cleanIsbn(b.isbn)===isbn);
+  if(existing){
+    stopCamera();
+    setScanStatus("Cet ouvrage est déjà enregistré.");
+    openDetail(existing.id);
+    return;
+  }
+
+  setScanStatus("Recherche des informations en ligne…");
+  $("manualScanSearch").classList.add("loading");
+  const metadata = await fetchBookMetadata(isbn);
+  $("manualScanSearch").classList.remove("loading");
+
+  stopCamera();
+  openForm();
+  $("isbn").value = isbn;
+
+  if(metadata){
+    $("title").value = metadata.title;
+    $("author").value = metadata.author;
+    $("publisher").value = metadata.publisher;
+    $("year").value = metadata.year;
+    activateTab("generalTab");
+    setScanStatus("Informations trouvées. Vérifie puis complète la fiche.");
+  }else{
+    activateTab("editionTab");
+    setScanStatus("ISBN reconnu, mais aucune fiche n’a été trouvée. Complète les informations manuellement.");
+  }
+}
+
+async function startCamera(){
+  if(!window.isSecureContext){
+    setScanStatus("La caméra est bloquée dans un fichier local. Elle fonctionnera lorsque BiblioPerso sera installé depuis une adresse sécurisée.");
+    return;
+  }
+  if(!navigator.mediaDevices?.getUserMedia){
+    setScanStatus("La caméra n’est pas disponible dans ce navigateur.");
+    return;
+  }
+  if(!("BarcodeDetector" in window)){
+    setScanStatus("La lecture automatique des codes-barres n’est pas prise en charge ici. Utilise la saisie manuelle.");
+    return;
+  }
+
+  try{
+    const formats = await BarcodeDetector.getSupportedFormats();
+    const preferred = formats.includes("ean_13") ? ["ean_13"] : formats;
+    const detector = new BarcodeDetector({formats:preferred});
+    scanStream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"}}, audio:false
+    });
+    $("scanVideo").srcObject = scanStream;
+    await $("scanVideo").play();
+    $("scanVideo").classList.remove("hidden");
+    $("scanPlaceholder").classList.add("hidden");
+    $("startCameraBtn").classList.add("hidden");
+    $("stopCameraBtn").classList.remove("hidden");
+    setScanStatus("Place le code-barres dans l’image.");
+    scanLoopActive = true;
+
+    const detect = async()=>{
+      if(!scanLoopActive) return;
+      try{
+        const codes = await detector.detect($("scanVideo"));
+        const code = codes.find(c=>["ean_13","ean_8","upc_a","upc_e"].includes(c.format)) || codes[0];
+        if(code?.rawValue){
+          scanLoopActive = false;
+          await handleScannedIsbn(code.rawValue);
+          return;
+        }
+      }catch(error){}
+      requestAnimationFrame(detect);
+    };
+    requestAnimationFrame(detect);
+  }catch(error){
+    setScanStatus("Impossible d’ouvrir la caméra. Vérifie l’autorisation donnée au navigateur.");
+    stopCamera();
+  }
+}
+
+function stopCamera(){
+  scanLoopActive = false;
+  if(scanStream){
+    scanStream.getTracks().forEach(track=>track.stop());
+    scanStream = null;
+  }
+  $("scanVideo").srcObject = null;
+  $("scanVideo").classList.add("hidden");
+  $("scanPlaceholder").classList.remove("hidden");
+  $("startCameraBtn").classList.remove("hidden");
+  $("stopCameraBtn").classList.add("hidden");
+}
+
+$("scanBtn").addEventListener("click",()=>{
+  $("manualScanIsbn").value = "";
+  setScanStatus("Prêt.");
+  showView("scanView");
+});
+$("startCameraBtn").addEventListener("click",startCamera);
+$("stopCameraBtn").addEventListener("click",stopCamera);
+$("manualScanSearch").addEventListener("click",()=>handleScannedIsbn($("manualScanIsbn").value));
+$("manualScanIsbn").addEventListener("keydown",e=>{
+  if(e.key==="Enter") handleScannedIsbn(e.target.value);
+});
+
+$("searchInput").addEventListener("input",render);
+
+$("seriesBtn").addEventListener("click",()=>{renderSeries();showView("seriesView");});
+$("seriesSearchInput").addEventListener("input",renderSeries);
+$("closeSeriesDialog").addEventListener("click",()=>$("seriesDialog").close());
+$("author").addEventListener("blur",applySmartDefaults);
+$("series").addEventListener("blur",applySmartDefaults);
+
+$("addBtn").addEventListener("click",()=>openForm());
+$("inventoryBtn").addEventListener("click",()=>showView("inventoryView"));
+$("wishlistBtn").addEventListener("click",()=>{
+  $("searchInput").value="";
+  document.querySelectorAll(".stat-card").forEach(x=>x.classList.remove("active"));
+  render();
+  const buy = books.filter(b=>b.status==="buy");
+  $("results").innerHTML = buy.length ? "" : "Aucun ouvrage à acheter.";
+  if(buy.length){
+    $("results").className="results";
+    buy.forEach(b=>{
+      const btn=document.createElement("button"); btn.className="result-item";
+      btn.innerHTML=`<strong>${escapeHtml(b.title)}</strong><div class="meta">${escapeHtml(b.author)}</div><span class="badge buy">À acheter</span>`;
+      btn.onclick=()=>openDetail(b.id); $("results").appendChild(btn);
+    });
+    $("resultCount").textContent=buy.length;
+  }
+});
+$("menuBtn").addEventListener("click",()=>{renderSnapshots();showView("menuView");});
+$("quickBackupBtn").addEventListener("click",()=>{downloadBackup();alert("La sauvegarde a été téléchargée.");});
+$("installHelpBtn").addEventListener("click",()=>showView("installView"));
+document.querySelectorAll("[data-back]").forEach(b=>b.addEventListener("click",()=>showView("homeView")));
+document.querySelectorAll(".stat-card").forEach(btn=>btn.addEventListener("click",()=>{
+  const was=btn.classList.contains("active");
+  document.querySelectorAll(".stat-card").forEach(x=>x.classList.remove("active"));
+  if(!was) btn.classList.add("active");
+  render();
+}));
+
+$("bookForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const data=getFormData();
+  const idx=books.findIndex(b=>b.id===data.id);
+  makeSnapshot(idx>=0 ? "Avant modification d’un ouvrage" : "Avant ajout d’un ouvrage");
+  if(idx>=0) books[idx]=data; else books.push(data);
+  save(false);
+  if(inventoryLocation){
+    $("inventoryCount").textContent = books.filter(b=>locationOf(b)===inventoryLocation.location).length - inventoryStartCount;
+    showView("inventoryView");
+  } else showView("homeView");
+});
+$("deleteBtn").addEventListener("click",()=>{
+  if(currentBookId && confirm("Supprimer cet ouvrage ?")){
+    makeSnapshot("Avant suppression d’un ouvrage"); books=books.filter(b=>b.id!==currentBookId); save(false); showView("homeView");
+  }
+});
+$("closeDialog").addEventListener("click",()=>$("detailDialog").close());
+$("editBookBtn").addEventListener("click",()=>{
+  const b=books.find(x=>x.id===currentBookId); $("detailDialog").close(); openForm(b);
+});
+
+$("startInventory").addEventListener("click",()=>{
+  const location=$("inventoryLocation").value.trim().toUpperCase().replace(/\s+/g,"");
+  if(!location){alert("Indique l’emplacement.");return;}
+  inventoryLocation={location};
+  inventoryStartCount=books.filter(b=>locationOf(b)===location).length;
+  $("inventoryTitle").textContent=`Étagère ${location}`;
+  $("inventoryCount").textContent="0";
+  $("inventorySession").classList.remove("hidden");
+});
+$("inventoryAdd").addEventListener("click",()=>openForm());
+$("finishInventory").addEventListener("click",()=>{
+  if(inventoryLocation) alert(`Étagère ${inventoryLocation.location} terminée.`);
+  inventoryLocation=null; $("inventorySession").classList.add("hidden"); showView("homeView");
+});
+
+$("exportBtn").addEventListener("click",downloadBackup);
+$("importInput").addEventListener("change",async e=>{
+  const file=e.target.files[0]; if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    if(!Array.isArray(data.books)) throw new Error();
+    if(confirm(`Importer ${data.books.length} ouvrage(s) et remplacer les données actuelles ?`)){makeSnapshot("Avant import");books=data.books;save(false);showView("homeView");}
+  }catch{alert("Sauvegarde invalide.");}
+});
+$("clearBtn").addEventListener("click",()=>{
+  if(confirm("Effacer toutes les données locales ? Une sauvegarde automatique sera conservée.")){makeSnapshot("Avant effacement");books=[];save(false);showView("homeView");}
+});
+$("demoBtn").addEventListener("click",()=>{
+  if(books.length && !confirm("Ajouter les exemples aux données existantes ?")) return;
+  books.push(
+    {id:crypto.randomUUID(),category:"BD",title:"Le Secret de l’Espadon",author:"Edgar P. Jacobs",series:"Blake et Mortimer",volume:"1",format:"Album cartonné",containsVolumes:"",collection:"",isbn:"9782870970140",publisher:"Blake et Mortimer",year:"",column:"D",shelf:"4",status:"owned",read:true,notes:""},
+    {id:crypto.randomUUID(),category:"Roman",title:"Shining",author:"Stephen King",series:"",volume:"",format:"Poche",containsVolumes:"",collection:"Le Livre de Poche",isbn:"",publisher:"",year:"",column:"F",shelf:"3",status:"owned",read:true,notes:""},
+    {id:crypto.randomUUID(),category:"Roman",title:"Le Seigneur des Anneaux — Intégrale",author:"J. R. R. Tolkien",series:"Le Seigneur des Anneaux",volume:"",format:"Intégrale",containsVolumes:"1-3",collection:"",isbn:"",publisher:"",year:"",column:"G",shelf:"2",status:"owned",read:false,notes:""}
+  ); makeSnapshot("Avant ajout des données de démonstration"); save(false); showView("homeView");
+});
+
+
+render();
+
+</script>
+</body>
+</html>
