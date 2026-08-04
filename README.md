@@ -1,4 +1,4 @@
-# BiblioPerso V0.11 — PWA iPhone
+# BiblioPerso V0.12 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -47,3 +47,11 @@ Les 1 800 ouvrages ne seront pas stockés dans l’hébergement : ils resteront 
 - prochain tome annoncé et date prévue ;
 - page « Ce qui me manque » ;
 - intégrales et recueils pris en compte dans la détection.
+
+
+## Nouveautés V0.12
+- page « Sorties à venir » ;
+- tri automatique par date ;
+- indication « disponible » lorsque la date est passée ;
+- ajout direct d’un prochain tome à la liste « À acheter » ;
+- détection d’un tome déjà possédé ou déjà présent dans la liste d’achats.

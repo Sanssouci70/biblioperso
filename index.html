@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V0.11</title>
+  <title>BiblioPerso V0.12</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -24,6 +24,14 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+
+.upcoming-card{padding:14px;border:1px solid #e1d9cf;border-radius:12px;background:#fcfaf7}
+.upcoming-card.available{border-color:#d6b65c;background:#fff9e8}
+.upcoming-card.future{border-color:#c9ccef;background:#f6f6ff}
+.release-date{font-weight:700;margin-top:8px}
+.release-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.release-actions button{padding:8px 10px}
 
 .missing-card{padding:14px;border:1px solid #e1d9cf;border-radius:12px;background:#fcfaf7}
 .missing-card strong{display:block}
@@ -96,7 +104,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 0.11 · tomes manquants</p>
+      <p class="subtitle">Version 0.12 · sorties à venir</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -142,6 +150,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <button id="wishlistBtn">🛒 À acheter</button>
         <button id="seriesBtn">📚 Univers et cycles</button>
         <button id="missingBtn">📋 Ce qui me manque</button>
+        <button id="upcomingBtn">📅 Sorties à venir</button>
         <button id="quickBackupBtn">💾 Sauvegarder ma bibliothèque</button>
         <button id="installHelpBtn">📱 Installer sur iPhone</button>
       </div>
@@ -268,6 +277,19 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+    <section id="upcomingView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Sorties à venir</h2>
+      </div>
+      <label class="search-box">
+        <span>🔎</span>
+        <input id="upcomingSearchInput" type="search" placeholder="Filtrer par univers ou cycle" autocomplete="off">
+      </label>
+      <div id="upcomingResults" class="results empty">Aucune sortie annoncée.</div>
+    </section>
+
     <section id="missingView" class="view">
       <div class="view-title">
         <button class="back-btn" data-back>←</button>
@@ -361,7 +383,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Détection automatique des tomes manquants, nombre de tomes parus par cycle, prochaines parutions et page « Ce qui me manque ».</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Page « Sorties à venir », tri par date, distinction entre annoncé et déjà disponible, et ajout direct à la liste « À acheter ».</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -448,7 +470,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"0.11",
+    version:"0.12",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -531,6 +553,122 @@ function missingForCycle(items){
   for(let i=1;i<=meta.published;i++) if(!present.has(String(i))) missing.push(i);
   return {present,missing,...meta};
 }
+
+function collectUpcoming(){
+  const releases = [];
+  [...buildUniverseMap().entries()].forEach(([universe,items])=>{
+    const groups = new Map();
+    items.forEach(b=>{
+      const key = cycleOf(b) || "Hors cycle";
+      if(!groups.has(key)) groups.set(key,[]);
+      groups.get(key).push(b);
+    });
+    groups.forEach((cycleItems,cycleName)=>{
+      const meta = cycleMeta(cycleItems);
+      if(!meta.nextVolume) return;
+      const alreadyOwned = cycleItems.some(b=>String(b.volume||"")===String(meta.nextVolume) && b.status==="owned");
+      const alreadyBuy = cycleItems.some(b=>String(b.volume||"")===String(meta.nextVolume) && b.status==="buy");
+      releases.push({
+        universe, cycleName,
+        nextVolume:String(meta.nextVolume),
+        nextReleaseDate:meta.nextReleaseDate || "",
+        alreadyOwned, alreadyBuy
+      });
+    });
+  });
+  return releases;
+}
+function renderUpcoming(){
+  const q = normalize($("upcomingSearchInput")?.value || "");
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const releases = collectUpcoming()
+    .filter(r=>!q || normalize(r.universe+" "+r.cycleName).includes(q))
+    .sort((a,b)=>{
+      if(!a.nextReleaseDate && !b.nextReleaseDate) return a.universe.localeCompare(b.universe,"fr");
+      if(!a.nextReleaseDate) return 1;
+      if(!b.nextReleaseDate) return -1;
+      return a.nextReleaseDate.localeCompare(b.nextReleaseDate);
+    });
+
+  const box = $("upcomingResults");
+  if(!box) return;
+  if(!releases.length){
+    box.className="results empty";
+    box.textContent="Aucune sortie annoncée.";
+    return;
+  }
+
+  box.className="results";
+  box.innerHTML="";
+  releases.forEach(r=>{
+    const releaseDate = r.nextReleaseDate ? new Date(r.nextReleaseDate+"T12:00:00") : null;
+    const available = releaseDate && releaseDate <= today;
+    const dateLabel = releaseDate ? new Intl.DateTimeFormat("fr-FR",{dateStyle:"long"}).format(releaseDate) : "Date non renseignée";
+    const card=document.createElement("div");
+    card.className=`upcoming-card ${available ? "available" : "future"}`;
+    card.innerHTML=`<strong>${escapeHtml(r.universe)}</strong>
+      <div class="meta">${escapeHtml(r.cycleName)} · tome ${escapeHtml(r.nextVolume)}</div>
+      <div class="release-date">${available ? "Disponible depuis le " : "Sortie prévue le "}${escapeHtml(dateLabel)}</div>
+      <div class="release-actions"></div>`;
+
+    const actions=card.querySelector(".release-actions");
+    if(r.alreadyOwned){
+      const badge=document.createElement("span");
+      badge.className="badge";
+      badge.textContent="Déjà possédé";
+      actions.appendChild(badge);
+    } else if(r.alreadyBuy){
+      const badge=document.createElement("span");
+      badge.className="badge buy";
+      badge.textContent="Déjà dans À acheter";
+      actions.appendChild(badge);
+    } else {
+      const btn=document.createElement("button");
+      btn.textContent="Ajouter à acheter";
+      btn.addEventListener("click",()=>{
+        const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+        const title = `${r.universe}${r.cycleName !== "Hors cycle" ? " — "+r.cycleName : ""} — tome ${r.nextVolume}`;
+        makeSnapshot("Avant ajout à la liste d’achats");
+        books.push({
+          id,
+          category:"BD",
+          title,
+          author:"",
+          universe:r.universe,
+          cycle:r.cycleName==="Hors cycle" ? "" : r.cycleName,
+          series:r.universe,
+          volume:r.nextVolume,
+          publishedVolumes:"",
+          nextVolume:"",
+          nextReleaseDate:"",
+          format:"Autre",
+          containsVolumes:"",
+          collection:"",
+          isbn:"",
+          publisher:"",
+          year:"",
+          location:"",
+          column:"",
+          shelf:"",
+          quantity:1,
+          status:"buy",
+          condition:"Bon",
+          read:false,
+          favorite:false,
+          tags:"sortie annoncée",
+          notes:r.nextReleaseDate ? `Sortie annoncée le ${r.nextReleaseDate}` : ""
+        });
+        save(false);
+        renderUpcoming();
+        alert("Ajouté à la liste « À acheter ».");
+      });
+      actions.appendChild(btn);
+    }
+    box.appendChild(card);
+  });
+}
+
 function renderMissing(){
   const q = normalize($("missingSearchInput")?.value || "");
   const cards = [];
@@ -671,6 +809,7 @@ function render() {
   renderSeries();
   refreshSuggestions();
   renderMissing();
+  renderUpcoming();
   $("resultCount").textContent = filtered.length;
   const box = $("results");
   if (!filtered.length) {
@@ -959,8 +1098,10 @@ $("searchInput").addEventListener("input",render);
 
 $("seriesBtn").addEventListener("click",()=>{renderSeries();showView("seriesView");});
 $("missingBtn").addEventListener("click",()=>{renderMissing();showView("missingView");});
+$("upcomingBtn").addEventListener("click",()=>{renderUpcoming();showView("upcomingView");});
 $("seriesSearchInput").addEventListener("input",renderSeries);
 $("missingSearchInput").addEventListener("input",renderMissing);
+$("upcomingSearchInput").addEventListener("input",renderUpcoming);
 $("universe").addEventListener("input",refreshSuggestions);
 $("closeSeriesDialog").addEventListener("click",()=>$("seriesDialog").close());
 $("author").addEventListener("blur",applySmartDefaults);
