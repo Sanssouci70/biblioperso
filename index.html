@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V1.1.2</title>
+  <title>BiblioPerso V1.1.3</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -123,7 +123,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 1.1.2 · scan iPhone</p>
+      <p class="subtitle">Version 1.1.3 · correctif caméra</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -431,6 +431,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         </div>
         <div class="scan-actions">
           <button id="startCameraBtn" class="primary">Ouvrir la caméra</button>
+          <button id="testCameraBtn">Tester uniquement la caméra</button>
           <button id="stopCameraBtn" class="hidden">Arrêter la caméra</button>
         </div>
         <div id="scanStatus" class="smart-note">Prêt.</div>
@@ -475,7 +476,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V1.1.2</h3><p class="small-note">Nouveau moteur de scan ZXing compatible Safari sur iPhone, cadre de visée, arrêt automatique après détection, vibration, contrôle des doublons et recherche bibliographique.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Correctif V1.1.3</h3><p class="small-note">Correction du chargement ZXing et de son initialisation, contraintes caméra simplifiées pour Safari, test caméra indépendant et affichage détaillé des erreurs.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -498,7 +499,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
     <div id="seriesDialogBody"></div>
   </dialog>
 
-  <script src="https://unpkg.com/@zxing/browser@0.1.5"></script>
+  <script src="https://unpkg.com/@zxing/browser@0.1.1/umd/zxing-browser.min.js"></script>
   <script>
 const STORAGE_KEY = "biblioperso_books_v02";
 const SNAPSHOT_KEY = "biblioperso_snapshots_v07";
@@ -565,7 +566,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"1.1.2",
+    version:"1.1.3",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1244,6 +1245,34 @@ async function handleScannedIsbn(rawIsbn){
   scanHandlingResult = false;
 }
 
+
+async function testCameraOnly(){
+  if(!window.isSecureContext){
+    setScanStatus("Test caméra : la page n’est pas en HTTPS.");
+    return;
+  }
+  try{
+    stopCamera();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio:false,
+      video:{facingMode:"environment"}
+    });
+    const video = $("scanVideo");
+    video.srcObject = stream;
+    await video.play();
+    $("scanVideoWrap").classList.remove("hidden");
+    $("scanPlaceholder").classList.add("hidden");
+    $("startCameraBtn").classList.add("hidden");
+    $("testCameraBtn").classList.add("hidden");
+    $("stopCameraBtn").classList.remove("hidden");
+    setScanStatus("Caméra ouverte correctement. Le problème éventuel vient alors du lecteur de code-barres.");
+  }catch(error){
+    const details = [error?.name, error?.message].filter(Boolean).join(" — ");
+    setScanStatus(`Échec du test caméra${details ? " : "+details : "."}`);
+    console.error("Test caméra", error);
+  }
+}
+
 async function startCamera(){
   if(!window.isSecureContext){
     setScanStatus("La caméra nécessite une adresse HTTPS.");
@@ -1262,10 +1291,7 @@ async function startCamera(){
   scanHandlingResult = false;
 
   try{
-    scanReader = new ZXingBrowser.BrowserMultiFormatReader({
-      delayBetweenScanAttempts: 120,
-      delayBetweenScanSuccess: 800
-    });
+    scanReader = new ZXingBrowser.BrowserMultiFormatReader();
 
     $("scanVideoWrap").classList.remove("hidden");
     $("scanPlaceholder").classList.add("hidden");
@@ -1275,11 +1301,7 @@ async function startCamera(){
 
     const constraints = {
       audio:false,
-      video:{
-        facingMode:{ideal:"environment"},
-        width:{ideal:1920},
-        height:{ideal:1080}
-      }
+      video:{ facingMode:"environment" }
     };
 
     scanControls = await scanReader.decodeFromConstraints(
@@ -1300,7 +1322,9 @@ async function startCamera(){
     }else if(name === "NotFoundError"){
       setScanStatus("Aucune caméra n’a été trouvée.");
     }else{
-      setScanStatus("Impossible d’ouvrir la caméra. Ferme puis rouvre BiblioPerso et réessaie.");
+      const details = [error?.name, error?.message].filter(Boolean).join(" — ");
+      setScanStatus(`Impossible d’ouvrir la caméra${details ? " : "+details : "."}`);
+      console.error("Erreur caméra BiblioPerso", error);
     }
   }
 }
@@ -1320,6 +1344,7 @@ function stopCamera(){
   $("scanVideoWrap")?.classList.add("hidden");
   $("scanPlaceholder")?.classList.remove("hidden");
   $("startCameraBtn")?.classList.remove("hidden");
+  $("testCameraBtn")?.classList.remove("hidden");
   $("stopCameraBtn")?.classList.add("hidden");
 }
 
@@ -1329,6 +1354,7 @@ $("scanBtn").addEventListener("click",()=>{
   showView("scanView");
 });
 $("startCameraBtn").addEventListener("click",startCamera);
+$("testCameraBtn").addEventListener("click",testCameraOnly);
 $("stopCameraBtn").addEventListener("click",stopCamera);
 $("manualScanSearch").addEventListener("click",()=>handleScannedIsbn($("manualScanIsbn").value));
 $("manualScanIsbn").addEventListener("keydown",e=>{

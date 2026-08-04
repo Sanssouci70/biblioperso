@@ -1,4 +1,4 @@
-# BiblioPerso V1.1.2 — PWA iPhone
+# BiblioPerso V1.1.3 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -95,3 +95,18 @@ Les 1 800 ouvrages ne seront pas stockés dans l’hébergement : ils resteront 
 
 ## Premier essai sur iPhone
 Après la mise à jour GitHub, ouvre d’abord l’adresse dans Safari et recharge la page. Ferme ensuite l’application de l’écran d’accueil et rouvre-la. Au premier scan, accepte l’accès à la caméra.
+
+
+## Correctif V1.1.3
+- version UMD vérifiée de ZXing Browser ;
+- initialisation corrigée du lecteur ;
+- contraintes caméra simplifiées pour Safari/iPhone SE ;
+- bouton « Tester uniquement la caméra » ;
+- message d’erreur technique détaillé en cas d’échec.
+
+## Test conseillé
+1. Mettre à jour GitHub.
+2. Ouvrir le site dans Safari et recharger.
+3. Ouvrir Scanner un ISBN.
+4. Appuyer d’abord sur « Tester uniquement la caméra ».
+5. Si l’image apparaît, arrêter puis tester « Ouvrir la caméra ».
