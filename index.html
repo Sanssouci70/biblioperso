@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V0.10</title>
+  <title>BiblioPerso V0.11</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -23,6 +23,12 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+
+.missing-card{padding:14px;border:1px solid #e1d9cf;border-radius:12px;background:#fcfaf7}
+.missing-card strong{display:block}
+.missing-list{margin-top:8px;font-size:.9rem}
+.upcoming-line{margin-top:8px;padding:8px 10px;border-radius:10px;background:#fff1c7}
 
 .cycle-section{margin-top:16px;padding-top:12px;border-top:1px solid #e7ded3}
 .cycle-title{font-weight:700;margin-bottom:8px}
@@ -90,7 +96,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 0.10 · univers et cycles</p>
+      <p class="subtitle">Version 0.11 · tomes manquants</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -135,6 +141,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <button id="inventoryBtn">▦ Inventaire par étagère</button>
         <button id="wishlistBtn">🛒 À acheter</button>
         <button id="seriesBtn">📚 Univers et cycles</button>
+        <button id="missingBtn">📋 Ce qui me manque</button>
         <button id="quickBackupBtn">💾 Sauvegarder ma bibliothèque</button>
         <button id="installHelpBtn">📱 Installer sur iPhone</button>
       </div>
@@ -180,6 +187,15 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
           <label>Cycle / sous-série
             <input id="cycle" list="cycleSuggestions" placeholder="Ex. Louve">
             <datalist id="cycleSuggestions"></datalist>
+          </label>
+          <label>Nombre de tomes parus dans ce cycle
+            <input id="publishedVolumes" type="number" min="0" inputmode="numeric" placeholder="Ex. 7">
+          </label>
+          <label>Prochain tome annoncé
+            <input id="nextVolume" inputmode="decimal" placeholder="Ex. 8">
+          </label>
+          <label>Date annoncée
+            <input id="nextReleaseDate" type="date">
           </label>
           <label>Tome<input id="volume" inputmode="decimal" placeholder="Ex. 3 ou 3.5"></label>
           <label>Contient les tomes<input id="containsVolumes" placeholder="Ex. 1-3 ou 1,2,4"></label>
@@ -250,6 +266,19 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+
+    <section id="missingView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Ce qui me manque</h2>
+      </div>
+      <label class="search-box">
+        <span>🔎</span>
+        <input id="missingSearchInput" type="search" placeholder="Filtrer par univers ou cycle" autocomplete="off">
+      </label>
+      <div id="missingResults" class="results empty">Aucun tome manquant détecté.</div>
+    </section>
 
     <section id="installView" class="view">
       <div class="view-title">
@@ -332,7 +361,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Gestion des univers, cycles et tomes ; regroupement automatique des ouvrages par cycle ; intégrales prises en compte dans chaque cycle.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Détection automatique des tomes manquants, nombre de tomes parus par cycle, prochaines parutions et page « Ce qui me manque ».</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -419,7 +448,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"0.10",
+    version:"0.11",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -481,6 +510,67 @@ function refreshSuggestions(){
   const cycles = [...new Set(books.filter(b=>!currentUniverse || normalize(universeOf(b))===normalize(currentUniverse)).map(cycleOf).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr"));
   $("cycleSuggestions").innerHTML = cycles.map(x=>`<option value="${escapeHtml(x)}"></option>`).join("");
 }
+
+function cycleMeta(items){
+  let published = 0, nextVolume = "", nextReleaseDate = "";
+  items.forEach(b=>{
+    published = Math.max(published, Number(b.publishedVolumes || 0));
+    if(!nextVolume && b.nextVolume) nextVolume = b.nextVolume;
+    if(!nextReleaseDate && b.nextReleaseDate) nextReleaseDate = b.nextReleaseDate;
+  });
+  return {published,nextVolume,nextReleaseDate};
+}
+function missingForCycle(items){
+  const present = new Set();
+  items.filter(x=>x.status==="owned").forEach(b=>{
+    if(b.volume) present.add(String(b.volume));
+    parseContainedVolumes(b.containsVolumes).forEach(v=>present.add(v));
+  });
+  const meta = cycleMeta(items);
+  const missing = [];
+  for(let i=1;i<=meta.published;i++) if(!present.has(String(i))) missing.push(i);
+  return {present,missing,...meta};
+}
+function renderMissing(){
+  const q = normalize($("missingSearchInput")?.value || "");
+  const cards = [];
+  [...buildUniverseMap().entries()].forEach(([universe,items])=>{
+    const groups = new Map();
+    items.forEach(b=>{
+      const key = cycleOf(b) || "Hors cycle";
+      if(!groups.has(key)) groups.set(key,[]);
+      groups.get(key).push(b);
+    });
+    groups.forEach((cycleItems,cycleName)=>{
+      const info = missingForCycle(cycleItems);
+      const hay = normalize(universe + " " + cycleName);
+      if(q && !hay.includes(q)) return;
+      if(!info.missing.length && !info.nextVolume) return;
+      cards.push({universe,cycleName,info});
+    });
+  });
+  const box = $("missingResults");
+  if(!box) return;
+  if(!cards.length){
+    box.className="results empty";
+    box.textContent="Aucun tome manquant ou annoncé.";
+    return;
+  }
+  box.className="results";
+  box.innerHTML="";
+  cards.sort((a,b)=>a.universe.localeCompare(b.universe,"fr"));
+  cards.forEach(c=>{
+    const el=document.createElement("div");
+    el.className="missing-card";
+    const date = c.info.nextReleaseDate ? new Intl.DateTimeFormat("fr-FR").format(new Date(c.info.nextReleaseDate+"T12:00:00")) : "";
+    el.innerHTML=`<strong>${escapeHtml(c.universe)}</strong>
+      <div class="meta">${escapeHtml(c.cycleName)}</div>
+      ${c.info.missing.length ? `<div class="missing-list">Tomes manquants : ${c.info.missing.join(", ")}</div>` : `<div class="missing-list">Cycle complet jusqu’au tome ${c.info.published}</div>`}
+      ${c.info.nextVolume ? `<div class="upcoming-line">À paraître : tome ${escapeHtml(c.info.nextVolume)}${date ? " · "+escapeHtml(date) : ""}</div>` : ""}`;
+    box.appendChild(el);
+  });
+}
+
 function renderSeries(){
   const q = normalize($("seriesSearchInput")?.value || "");
   const universes = [...buildUniverseMap().entries()]
@@ -513,13 +603,10 @@ function openSeries(name){
   });
 
   const sections = [...groups.entries()].map(([cycleName,cycleItems])=>{
-    const present = new Set();
-    cycleItems.filter(x=>x.status==="owned").forEach(b=>{
-      if(b.volume) present.add(String(b.volume));
-      parseContainedVolumes(b.containsVolumes).forEach(v=>present.add(v));
-    });
+    const info = missingForCycle(cycleItems);
+    const present = info.present;
     const nums=[...present].map(Number).filter(Number.isFinite);
-    const max=nums.length?Math.max(...nums):0;
+    const max=info.published || (nums.length?Math.max(...nums):0);
     const chips=[];
     for(let i=1;i<=max;i++){
       chips.push(`<div class="volume-chip ${present.has(String(i))?"":"missing"}">${i}</div>`);
@@ -531,6 +618,8 @@ function openSeries(name){
       <div class="cycle-title">${escapeHtml(cycleName)}</div>
       ${max ? `<div class="progress-wrap"><div class="progress-track"><div class="progress-bar" style="width:${percent}%"></div></div><div class="progress-label">${ownedCount} tome(s) couvert(s) sur ${max} · ${percent}%</div></div>` : ""}
       ${chips.length?`<div class="volume-grid">${chips.join("")}</div>`:""}
+      ${info.missing.length ? `<div class="missing-list">Manquants : ${info.missing.join(", ")}</div>` : (max ? `<div class="missing-list">Cycle complet jusqu’au tome ${max}</div>` : "")}
+      ${info.nextVolume ? `<div class="upcoming-line">À paraître : tome ${escapeHtml(info.nextVolume)}${info.nextReleaseDate ? " · "+escapeHtml(new Intl.DateTimeFormat("fr-FR").format(new Date(info.nextReleaseDate+"T12:00:00"))) : ""}</div>` : ""}
       ${ownedList}
     </div>`;
   }).join("");
@@ -581,6 +670,7 @@ function render() {
   filtered.sort((a,b)=>a.title.localeCompare(b.title,"fr"));
   renderSeries();
   refreshSuggestions();
+  renderMissing();
   $("resultCount").textContent = filtered.length;
   const box = $("results");
   if (!filtered.length) {
@@ -609,7 +699,7 @@ function openForm(book=null) {
   $("formTitle").textContent = book ? "Modifier l’ouvrage" : "Ajouter un ouvrage";
   $("deleteBtn").classList.toggle("hidden", !book);
   currentBookId = book?.id || null;
-  const fields = ["category","title","author","universe","cycle","volume","format","containsVolumes","collection","isbn","publisher","year","location","status","condition","tags","notes","quantity"];
+  const fields = ["category","title","author","universe","cycle","publishedVolumes","nextVolume","nextReleaseDate","volume","format","containsVolumes","collection","isbn","publisher","year","location","status","condition","tags","notes","quantity"];
   fields.forEach(f=>{ if(book && book[f] !== undefined) $(f).value = book[f]; });
   if(book && !$("universe").value) $("universe").value = book.series || "";
   $("read").checked = !!book?.read;
@@ -631,6 +721,9 @@ function getFormData(){
     author:$("author").value.trim(),
     universe:$("universe").value.trim(),
     cycle:$("cycle").value.trim(),
+    publishedVolumes:$("publishedVolumes").value.trim(),
+    nextVolume:$("nextVolume").value.trim(),
+    nextReleaseDate:$("nextReleaseDate").value,
     series:$("universe").value.trim(),
     volume:$("volume").value.trim(),
     format:$("format").value,
@@ -660,7 +753,7 @@ function openDetail(id){
   banner.className = `detail-status-banner ${b.status}`;
   banner.textContent = `${statusLabel(b.status)}${locationOf(b) ? " · Emplacement " + locationOf(b) : ""}`;
   const rows = [
-    ["Auteur",b.author],["Catégorie",b.category],["Univers",universeOf(b)],["Cycle",cycleOf(b)],["Tome",b.volume],
+    ["Auteur",b.author],["Catégorie",b.category],["Univers",universeOf(b)],["Cycle",cycleOf(b)],["Tomes parus",b.publishedVolumes||""],["Prochain tome",b.nextVolume||""],["Date annoncée",b.nextReleaseDate||""],["Tome",b.volume],
     ["Type",b.format],["Contient les tomes",b.containsVolumes],["Collection",b.collection],
     ["ISBN",b.isbn],["Éditeur",b.publisher],["Année",b.year],["Nombre d’exemplaires",b.quantity||1],["Emplacement",locationOf(b)],
     ["Statut",statusLabel(b.status)],["État",b.condition||""],["Lu",b.read?"Oui":"Non"],["Favori",b.favorite?"Oui":"Non"],["Étiquettes",b.tags||""],["Commentaire",b.notes]
@@ -865,7 +958,9 @@ $("manualScanIsbn").addEventListener("keydown",e=>{
 $("searchInput").addEventListener("input",render);
 
 $("seriesBtn").addEventListener("click",()=>{renderSeries();showView("seriesView");});
+$("missingBtn").addEventListener("click",()=>{renderMissing();showView("missingView");});
 $("seriesSearchInput").addEventListener("input",renderSeries);
+$("missingSearchInput").addEventListener("input",renderMissing);
 $("universe").addEventListener("input",refreshSuggestions);
 $("closeSeriesDialog").addEventListener("click",()=>$("seriesDialog").close());
 $("author").addEventListener("blur",applySmartDefaults);
