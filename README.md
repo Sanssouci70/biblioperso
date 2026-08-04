@@ -1,4 +1,4 @@
-# BiblioPerso V1.1.3 — PWA iPhone
+# BiblioPerso V1.2 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -110,3 +110,12 @@ Après la mise à jour GitHub, ouvre d’abord l’adresse dans Safari et rechar
 3. Ouvrir Scanner un ISBN.
 4. Appuyer d’abord sur « Tester uniquement la caméra ».
 5. Si l’image apparaît, arrêter puis tester « Ouvrir la caméra ».
+
+
+## Nouveautés V1.2
+- scan ISBN puis récupération automatique des informations bibliographiques ;
+- titre, auteur, éditeur, année, nombre de pages et langue ;
+- aucune couverture stockée ni affichée ;
+- suggestion automatique d’univers, cycle et tome à partir des données existantes ;
+- détection renforcée des doublons par ISBN et par ouvrage proche ;
+- confirmation avant enregistrement d’un doublon volontaire.

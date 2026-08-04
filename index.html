@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V1.1.3</title>
+  <title>BiblioPerso V1.2</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -75,6 +75,11 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 .snapshot-item button{padding:8px 10px}
 
 
+
+.smart-suggestion{padding:12px;border-radius:12px;background:#eef0ff;border:1px solid #c9ccef}
+.smart-suggestion strong{display:block;margin-bottom:6px}
+.smart-suggestion button{margin-top:8px;padding:8px 10px}
+
 .scan-video-wrap{position:relative;width:100%;overflow:hidden;border-radius:14px;background:#111}
 .scan-video-wrap .scan-video{display:block;width:100%;min-height:260px;max-height:430px;object-fit:cover;border-radius:0}
 .scan-frame{position:absolute;left:8%;right:8%;top:38%;height:24%;border:3px solid #fff;border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.28)}
@@ -123,7 +128,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 1.1.3 · correctif caméra</p>
+      <p class="subtitle">Version 1.2 · scan intelligent</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -274,6 +279,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
             <input id="nextReleaseDate" type="date">
           </label>
           <label>Tome<input id="volume" inputmode="decimal" placeholder="Ex. 3 ou 3.5"></label>
+          <div id="smartSuggestion" class="smart-suggestion hidden"></div>
           <label>Contient les tomes<input id="containsVolumes" placeholder="Ex. 1-3 ou 1,2,4"></label>
         </section>
 
@@ -289,6 +295,8 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
           <label>ISBN<input id="isbn" inputmode="numeric" autocomplete="off"></label>
           <label>Éditeur<input id="publisher"></label>
           <label>Année<input id="year" inputmode="numeric"></label>
+          <label>Nombre de pages<input id="pages" inputmode="numeric"></label>
+          <label>Langue<input id="language" placeholder="Ex. français"></label>
           <label>Nombre d’exemplaires<input id="quantity" type="number" min="1" value="1"></label>
         </section>
 
@@ -476,7 +484,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Correctif V1.1.3</h3><p class="small-note">Correction du chargement ZXing et de son initialisation, contraintes caméra simplifiées pour Safari, test caméra indépendant et affichage détaillé des erreurs.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Nouveautés V1.2</h3><p class="small-note">Scan intelligent avec récupération du titre, auteur, éditeur, année, pages et langue ; suggestion d’univers, cycle et tome ; contrôle renforcé des doublons.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -566,7 +574,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"1.1.3",
+    version:"1.2",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1059,7 +1067,7 @@ function openForm(book=null) {
   $("formTitle").textContent = book ? "Modifier l’ouvrage" : "Ajouter un ouvrage";
   $("deleteBtn").classList.toggle("hidden", !book);
   currentBookId = book?.id || null;
-  const fields = ["category","title","author","universe","cycle","publishedVolumes","nextVolume","nextReleaseDate","volume","format","containsVolumes","collection","isbn","publisher","year","location","status","condition","tags","notes","quantity","favoriteLevel"];
+  const fields = ["category","title","author","universe","cycle","publishedVolumes","nextVolume","nextReleaseDate","volume","format","containsVolumes","collection","isbn","publisher","year","pages","language","location","status","condition","tags","notes","quantity","favoriteLevel"];
   fields.forEach(f=>{ if(book && book[f] !== undefined) $(f).value = book[f]; });
   if(book && !$("universe").value) $("universe").value = book.series || "";
   $("read").checked = !!book?.read;
@@ -1099,6 +1107,8 @@ function getFormData(){
     isbn:$("isbn").value.replace(/[^0-9Xx]/g,""),
     publisher:$("publisher").value.trim(),
     year:$("year").value.trim(),
+    pages:$("pages").value.trim(),
+    language:$("language").value.trim(),
     location:loc,
     column:m ? m[1] : "",
     shelf:m ? m[2] : "",
@@ -1123,7 +1133,7 @@ function openDetail(id){
   const rows = [
     ["Auteur",b.author],["Catégorie",b.category],["Univers",universeOf(b)],["Cycle",cycleOf(b)],["Tomes parus",b.publishedVolumes||""],["Prochain tome",b.nextVolume||""],["Date annoncée",b.nextReleaseDate||""],["Tome",b.volume],
     ["Type",b.format],["Contient les tomes",b.containsVolumes],["Collection",b.collection],
-    ["ISBN",b.isbn],["Éditeur",b.publisher],["Année",b.year],["Nombre d’exemplaires",b.quantity||1],["Emplacement",locationOf(b)],
+    ["ISBN",b.isbn],["Éditeur",b.publisher],["Année",b.year],["Pages",b.pages||""],["Langue",b.language||""],["Nombre d’exemplaires",b.quantity||1],["Emplacement",locationOf(b)],
     ["Statut",statusLabel(b.status)],["État",b.condition||""],["Lu",b.read?"Oui":"Non"],["Favori",Number(b.favoriteLevel||0)>0 ? "★".repeat(Number(b.favoriteLevel||1)) : (b.favorite?"★":"Non")],["Étiquettes",b.tags||""],["Commentaire",b.notes]
   ].filter(r=>r[1]);
   $("detailBody").innerHTML = rows.map(([k,v])=>`<div class="detail-row"><strong>${escapeHtml(k)} :</strong> ${escapeHtml(v)}</div>`).join("");
@@ -1178,7 +1188,10 @@ async function fetchBookMetadata(isbn){
           title:item.title || "",
           author:(item.authors || []).map(a=>a.name).join(", "),
           publisher:(item.publishers || []).map(p=>p.name).join(", "),
-          year:String(item.publish_date || "").match(/\d{4}/)?.[0] || ""
+          year:String(item.publish_date || "").match(/\d{4}/)?.[0] || "",
+          pages:item.number_of_pages ? String(item.number_of_pages) : "",
+          language:"",
+          subjects:(item.subjects || []).map(s=>s.name).filter(Boolean)
         };
       }
     }
@@ -1195,12 +1208,70 @@ async function fetchBookMetadata(isbn){
           title:info.title || "",
           author:(info.authors || []).join(", "),
           publisher:info.publisher || "",
-          year:String(info.publishedDate || "").match(/\d{4}/)?.[0] || ""
+          year:String(info.publishedDate || "").match(/\d{4}/)?.[0] || "",
+          pages:info.pageCount ? String(info.pageCount) : "",
+          language:info.language || "",
+          subjects:info.categories || []
         };
       }
     }
   }catch(error){}
   return null;
+}
+
+
+function extractVolumeFromTitle(title){
+  const patterns = [
+    /\b(?:tome|t\.|vol(?:ume)?\.?)\s*([0-9]+(?:\.[0-9]+)?)/i,
+    /\b#\s*([0-9]+(?:\.[0-9]+)?)/i,
+    /\b([0-9]+)\s*\/\s*[0-9]+\b/
+  ];
+  for(const p of patterns){
+    const m = String(title||"").match(p);
+    if(m) return m[1];
+  }
+  return "";
+}
+function bestUniverseSuggestion(title, author){
+  const hay = normalize(`${title} ${author}`);
+  const candidates = [...buildUniverseMap().entries()].map(([name,items])=>{
+    let score = 0;
+    if(hay.includes(normalize(name))) score += 10;
+    const authorMatches = items.filter(b=>normalize(b.author)===normalize(author)).length;
+    score += Math.min(authorMatches,5);
+    return {name,score,items};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  return candidates[0] || null;
+}
+function bestCycleSuggestion(universe, title){
+  const items = (buildUniverseMap().get(universe)||[]);
+  const cycles = [...new Set(items.map(cycleOf).filter(Boolean))];
+  const hay = normalize(title);
+  const exact = cycles.find(c=>hay.includes(normalize(c)));
+  return exact || (cycles.length===1 ? cycles[0] : "");
+}
+function showSmartSuggestion(metadata){
+  const suggestion = bestUniverseSuggestion(metadata.title, metadata.author);
+  const inferredVolume = extractVolumeFromTitle(metadata.title);
+  if(!suggestion && !inferredVolume){
+    $("smartSuggestion").classList.add("hidden");
+    return;
+  }
+  const inferredCycle = suggestion ? bestCycleSuggestion(suggestion.name, metadata.title) : "";
+  $("smartSuggestion").classList.remove("hidden");
+  $("smartSuggestion").innerHTML = `
+    <strong>Suggestion automatique</strong>
+    ${suggestion ? `<div>Univers : ${escapeHtml(suggestion.name)}</div>` : ""}
+    ${inferredCycle ? `<div>Cycle : ${escapeHtml(inferredCycle)}</div>` : ""}
+    ${inferredVolume ? `<div>Tome : ${escapeHtml(inferredVolume)}</div>` : ""}
+    <button type="button" id="applySmartSuggestion">Appliquer</button>`;
+  $("applySmartSuggestion").addEventListener("click",()=>{
+    if(suggestion) $("universe").value=suggestion.name;
+    if(inferredCycle) $("cycle").value=inferredCycle;
+    if(inferredVolume) $("volume").value=inferredVolume;
+    refreshSuggestions();
+    $("smartSuggestion").classList.add("hidden");
+  });
 }
 
 async function handleScannedIsbn(rawIsbn){
@@ -1238,7 +1309,11 @@ async function handleScannedIsbn(rawIsbn){
     $("author").value = metadata.author;
     $("publisher").value = metadata.publisher;
     $("year").value = metadata.year;
+    $("pages").value = metadata.pages || "";
+    $("language").value = metadata.language || "";
+    showSmartSuggestion(metadata);
     activateTab("generalTab");
+    setScanStatus("Informations trouvées. Vérifie les champs personnels puis enregistre.");
   }else{
     activateTab("editionTab");
   }
@@ -1456,6 +1531,23 @@ $("bookForm").addEventListener("submit",e=>{
   e.preventDefault();
   const data=getFormData();
   if(data.location) localStorage.setItem("biblioperso_last_location", data.location);
+
+  const duplicateByIsbn = data.isbn && books.find(b=>b.id!==data.id && cleanIsbn(b.isbn)===cleanIsbn(data.isbn));
+  if(duplicateByIsbn){
+    const proceed = confirm(`Cet ISBN est déjà enregistré pour « ${duplicateByIsbn.title} ». Enregistrer quand même une autre édition ou un autre exemplaire ?`);
+    if(!proceed) return;
+  }
+  const sameWork = books.find(b=>b.id!==data.id &&
+    normalize(b.title)===normalize(data.title) &&
+    normalize(b.author)===normalize(data.author) &&
+    normalize(universeOf(b))===normalize(data.universe) &&
+    normalize(cycleOf(b))===normalize(data.cycle) &&
+    String(b.volume||"")===String(data.volume||""));
+  if(sameWork && !duplicateByIsbn){
+    const proceed = confirm(`Un ouvrage très proche existe déjà : « ${sameWork.title} ». Enregistrer quand même ?`);
+    if(!proceed) return;
+  }
+
   const idx=books.findIndex(b=>b.id===data.id);
   makeSnapshot(idx>=0 ? "Avant modification d’un ouvrage" : "Avant ajout d’un ouvrage");
   if(idx>=0) books[idx]=data; else {
