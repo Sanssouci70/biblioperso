@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V0.9.1</title>
+  <title>BiblioPerso V0.10</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -22,6 +22,11 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+
+.cycle-section{margin-top:16px;padding-top:12px;border-top:1px solid #e7ded3}
+.cycle-title{font-weight:700;margin-bottom:8px}
+.universe-meta{font-size:.86rem;color:#6f675e;margin-top:4px}
 
 .dashboard-panel{margin-bottom:14px}
 .dashboard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -85,7 +90,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 0.9.1</p>
+      <p class="subtitle">Version 0.10 · univers et cycles</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -129,7 +134,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <button id="scanBtn">📷 Scanner un ISBN</button>
         <button id="inventoryBtn">▦ Inventaire par étagère</button>
         <button id="wishlistBtn">🛒 À acheter</button>
-        <button id="seriesBtn">📚 Séries</button>
+        <button id="seriesBtn">📚 Univers et cycles</button>
         <button id="quickBackupBtn">💾 Sauvegarder ma bibliothèque</button>
         <button id="installHelpBtn">📱 Installer sur iPhone</button>
       </div>
@@ -168,7 +173,14 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
           </label>
           <label>Titre *<input id="title" required></label>
           <label>Auteur *<input id="author" required></label>
-          <label>Série<input id="series"></label>
+          <label>Univers / série principale
+            <input id="universe" list="universeSuggestions" placeholder="Ex. Thorgal">
+            <datalist id="universeSuggestions"></datalist>
+          </label>
+          <label>Cycle / sous-série
+            <input id="cycle" list="cycleSuggestions" placeholder="Ex. Louve">
+            <datalist id="cycleSuggestions"></datalist>
+          </label>
           <label>Tome<input id="volume" inputmode="decimal" placeholder="Ex. 3 ou 3.5"></label>
           <label>Contient les tomes<input id="containsVolumes" placeholder="Ex. 1-3 ou 1,2,4"></label>
         </section>
@@ -292,13 +304,13 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
     <section id="seriesView" class="view">
       <div class="view-title">
         <button class="back-btn" data-back>←</button>
-        <h2>Séries</h2>
+        <h2>Univers et cycles</h2>
       </div>
       <label class="search-box">
         <span>🔎</span>
-        <input id="seriesSearchInput" type="search" placeholder="Rechercher une série" autocomplete="off">
+        <input id="seriesSearchInput" type="search" placeholder="Rechercher un univers ou un cycle" autocomplete="off">
       </label>
-      <div id="seriesResults" class="results empty">Aucune série enregistrée.</div>
+      <div id="seriesResults" class="results empty">Aucun univers enregistré.</div>
     </section>
 
     <section id="menuView" class="view">
@@ -320,7 +332,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Tableau de bord masqué par défaut et accessible depuis un bouton placé entre « Ajouter un ouvrage » et « Scanner un ISBN ».</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Gestion des univers, cycles et tomes ; regroupement automatique des ouvrages par cycle ; intégrales prises en compte dans chaque cycle.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -407,7 +419,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"0.9.1",
+    version:"0.10",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -437,6 +449,8 @@ function normalize(s){return String(s ?? "").toLowerCase().normalize("NFD").repl
 function statusLabel(s){return ({owned:"Possédé",buy:"À acheter",wish:"Souhait",loaned:"Prêté"})[s] || s;}
 function categoryLabel(c){return c === "Roman" ? "Roman" : c;}
 function locationOf(b){return (b.location || `${(b.column||"").toUpperCase()}${b.shelf||""}`).toUpperCase();}
+function universeOf(b){return b.universe || b.series || "";}
+function cycleOf(b){return b.cycle || "";}
 
 
 function parseContainedVolumes(text){
@@ -451,64 +465,90 @@ function parseContainedVolumes(text){
   });
   return [...out];
 }
-function buildSeriesMap(){
+function buildUniverseMap(){
   const map = new Map();
-  books.filter(b=>b.series).forEach(b=>{
-    if(!map.has(b.series)) map.set(b.series,[]);
-    map.get(b.series).push(b);
+  books.filter(b=>universeOf(b)).forEach(b=>{
+    const u = universeOf(b);
+    if(!map.has(u)) map.set(u,[]);
+    map.get(u).push(b);
   });
   return map;
 }
+function refreshSuggestions(){
+  const universes = [...new Set(books.map(universeOf).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr"));
+  $("universeSuggestions").innerHTML = universes.map(x=>`<option value="${escapeHtml(x)}"></option>`).join("");
+  const currentUniverse = $("universe")?.value || "";
+  const cycles = [...new Set(books.filter(b=>!currentUniverse || normalize(universeOf(b))===normalize(currentUniverse)).map(cycleOf).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr"));
+  $("cycleSuggestions").innerHTML = cycles.map(x=>`<option value="${escapeHtml(x)}"></option>`).join("");
+}
 function renderSeries(){
   const q = normalize($("seriesSearchInput")?.value || "");
-  const series = [...buildSeriesMap().entries()]
-    .filter(([name])=>!q || normalize(name).includes(q))
+  const universes = [...buildUniverseMap().entries()]
+    .filter(([name,items])=>!q || normalize(name).includes(q) || items.some(b=>normalize(cycleOf(b)).includes(q)))
     .sort((a,b)=>a[0].localeCompare(b[0],"fr"));
   const box = $("seriesResults");
   if(!box) return;
-  if(!series.length){box.className="results empty";box.textContent="Aucune série enregistrée.";return;}
+  if(!universes.length){box.className="results empty";box.textContent="Aucun univers enregistré.";return;}
   box.className="results"; box.innerHTML="";
-  series.forEach(([name,items])=>{
+  universes.forEach(([name,items])=>{
     const owned = items.filter(x=>x.status==="owned").length;
+    const cycles = [...new Set(items.map(cycleOf).filter(Boolean))];
     const btn=document.createElement("button");
     btn.className="series-card";
-    btn.innerHTML=`<strong>${escapeHtml(name)}</strong><div class="meta">${owned} ouvrage(s) possédé(s) · ${items.length} fiche(s)</div>`;
+    btn.innerHTML=`<strong>${escapeHtml(name)}</strong>
+      <div class="universe-meta">${cycles.length} cycle(s) · ${owned} ouvrage(s) possédé(s)</div>`;
     btn.onclick=()=>openSeries(name);
     box.appendChild(btn);
   });
 }
 function openSeries(name){
-  const items=(buildSeriesMap().get(name)||[]).sort((a,b)=>(parseFloat(a.volume)||9999)-(parseFloat(b.volume)||9999));
+  const items=(buildUniverseMap().get(name)||[]).sort((a,b)=>(parseFloat(a.volume)||9999)-(parseFloat(b.volume)||9999));
   $("seriesDialogTitle").textContent=name;
-  const present=new Set();
-  const explicit=[];
-  items.filter(x=>x.status==="owned").forEach(b=>{
-    if(b.volume) present.add(String(b.volume));
-    parseContainedVolumes(b.containsVolumes).forEach(v=>present.add(v));
-    explicit.push(b);
+
+  const groups = new Map();
+  items.forEach(b=>{
+    const key = cycleOf(b) || "Hors cycle";
+    if(!groups.has(key)) groups.set(key,[]);
+    groups.get(key).push(b);
   });
-  const nums=[...present].map(Number).filter(Number.isFinite);
-  const max=nums.length?Math.max(...nums):0;
-  const chips=[];
-  for(let i=1;i<=max;i++){
-    chips.push(`<div class="volume-chip ${present.has(String(i))?"":"missing"}">${i}</div>`);
-  }
-  const ownedList=explicit.map(b=>`<div class="detail-row"><strong>${escapeHtml(b.title)}</strong>${b.volume?` — tome ${escapeHtml(b.volume)}`:""}${b.containsVolumes?` — couvre ${escapeHtml(b.containsVolumes)}`:""}<br><span class="meta">📍 ${escapeHtml(locationOf(b))} · ${escapeHtml(b.format)}</span></div>`).join("");
-  const ownedCount = nums.length;
-  const percent = max ? Math.round((ownedCount/max)*100) : 0;
+
+  const sections = [...groups.entries()].map(([cycleName,cycleItems])=>{
+    const present = new Set();
+    cycleItems.filter(x=>x.status==="owned").forEach(b=>{
+      if(b.volume) present.add(String(b.volume));
+      parseContainedVolumes(b.containsVolumes).forEach(v=>present.add(v));
+    });
+    const nums=[...present].map(Number).filter(Number.isFinite);
+    const max=nums.length?Math.max(...nums):0;
+    const chips=[];
+    for(let i=1;i<=max;i++){
+      chips.push(`<div class="volume-chip ${present.has(String(i))?"":"missing"}">${i}</div>`);
+    }
+    const ownedList=cycleItems.map(b=>`<div class="detail-row"><strong>${escapeHtml(b.title)}</strong>${b.volume?` — tome ${escapeHtml(b.volume)}`:""}${b.containsVolumes?` — couvre ${escapeHtml(b.containsVolumes)}`:""}<br><span class="meta">📍 ${escapeHtml(locationOf(b))} · ${escapeHtml(b.format)}</span></div>`).join("");
+    const ownedCount = nums.length;
+    const percent = max ? Math.round((ownedCount/max)*100) : 0;
+    return `<div class="cycle-section">
+      <div class="cycle-title">${escapeHtml(cycleName)}</div>
+      ${max ? `<div class="progress-wrap"><div class="progress-track"><div class="progress-bar" style="width:${percent}%"></div></div><div class="progress-label">${ownedCount} tome(s) couvert(s) sur ${max} · ${percent}%</div></div>` : ""}
+      ${chips.length?`<div class="volume-grid">${chips.join("")}</div>`:""}
+      ${ownedList}
+    </div>`;
+  }).join("");
+
   $("seriesDialogBody").innerHTML = `
-    <div class="smart-note">Les cases vertes correspondent aux tomes possédés, y compris ceux couverts par une intégrale ou un recueil.</div>
-    ${max ? `<div class="progress-wrap"><div class="progress-track"><div class="progress-bar" style="width:${percent}%"></div></div><div class="progress-label">${ownedCount} tome(s) couvert(s) sur ${max} · ${percent}%</div></div>` : ""}
-    ${chips.length?`<div class="section-label">Progression</div><div class="volume-grid">${chips.join("")}</div>`:""}
-    <div class="section-label">Ouvrages enregistrés</div>
-    ${ownedList || "<p>Aucun ouvrage possédé.</p>"}
+    <div class="smart-note">Les tomes sont regroupés par cycle. Les intégrales et recueils couvrent automatiquement les tomes indiqués.</div>
+    ${sections || "<p>Aucun ouvrage enregistré.</p>"}
   `;
   $("seriesDialog").showModal();
 }
 function applySmartDefaults(){
   const author=$("author").value.trim();
-  const series=$("series").value.trim();
-  const candidates=books.filter(b=>(series && normalize(b.series)===normalize(series)) || (!series && author && normalize(b.author)===normalize(author)));
+  const universe=$("universe").value.trim();
+  const cycle=$("cycle").value.trim();
+  const candidates=books.filter(b=>
+    (universe && normalize(universeOf(b))===normalize(universe) && (!cycle || normalize(cycleOf(b))===normalize(cycle))) ||
+    (!universe && author && normalize(b.author)===normalize(author))
+  );
   if(!candidates.length) return;
   const last=candidates[candidates.length-1];
   if(!$("location").value) $("location").value=locationOf(last);
@@ -524,7 +564,7 @@ function render() {
   $("otherCount").textContent = books.filter(b=>b.category==="Autre" && b.status==="owned").length;
 
   $("totalCount").textContent = books.filter(b=>b.status==="owned").reduce((sum,b)=>sum+Number(b.quantity||1),0);
-  $("seriesCount").textContent = new Set(books.filter(b=>b.series).map(b=>normalize(b.series))).size;
+  $("seriesCount").textContent = new Set(books.filter(b=>universeOf(b)).map(b=>normalize(universeOf(b)))).size;
   $("buyCount").textContent = books.filter(b=>b.status==="buy").length;
   $("lastLocation").textContent = localStorage.getItem("biblioperso_last_location") || "—";
 
@@ -532,7 +572,7 @@ function render() {
   const q = normalize($("searchInput").value);
   let filtered = books.filter(b => {
     if (!q) return true;
-    return [b.title,b.author,b.series,b.isbn,b.collection,b.publisher].some(x=>normalize(x).includes(q));
+    return [b.title,b.author,universeOf(b),cycleOf(b),b.isbn,b.collection,b.publisher].some(x=>normalize(x).includes(q));
   });
 
   const activeFilter = document.querySelector(".stat-card.active")?.dataset.filter;
@@ -540,6 +580,7 @@ function render() {
 
   filtered.sort((a,b)=>a.title.localeCompare(b.title,"fr"));
   renderSeries();
+  refreshSuggestions();
   $("resultCount").textContent = filtered.length;
   const box = $("results");
   if (!filtered.length) {
@@ -553,7 +594,7 @@ function render() {
     const btn = document.createElement("button");
     btn.className = "result-item";
     btn.innerHTML = `<strong>${escapeHtml(b.title)}${b.favorite ? '<span class="favorite-mark">★</span>' : ''}</strong>
-      <div class="meta">${escapeHtml(b.author)}${b.series ? " · "+escapeHtml(b.series) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
+      <div class="meta">${escapeHtml(b.author)}${universeOf(b) ? " · "+escapeHtml(universeOf(b)) : ""}${cycleOf(b) ? " · "+escapeHtml(cycleOf(b)) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
       <div class="meta">${categoryLabel(b.category)} · ${escapeHtml(b.format)} · 📍 ${escapeHtml(locationOf(b))}</div>
       <span class="badge ${b.status}">${statusLabel(b.status)}</span>${Number(b.quantity||1)>1 ? `<span class="badge">×${Number(b.quantity)}</span>` : ""}`;
     btn.addEventListener("click",()=>openDetail(b.id));
@@ -568,8 +609,9 @@ function openForm(book=null) {
   $("formTitle").textContent = book ? "Modifier l’ouvrage" : "Ajouter un ouvrage";
   $("deleteBtn").classList.toggle("hidden", !book);
   currentBookId = book?.id || null;
-  const fields = ["category","title","author","series","volume","format","containsVolumes","collection","isbn","publisher","year","location","status","condition","tags","notes","quantity"];
+  const fields = ["category","title","author","universe","cycle","volume","format","containsVolumes","collection","isbn","publisher","year","location","status","condition","tags","notes","quantity"];
   fields.forEach(f=>{ if(book && book[f] !== undefined) $(f).value = book[f]; });
+  if(book && !$("universe").value) $("universe").value = book.series || "";
   $("read").checked = !!book?.read;
   $("favorite").checked = !!book?.favorite;
   if (book && !$("location").value) $("location").value = locationOf(book);
@@ -587,7 +629,9 @@ function getFormData(){
     category:$("category").value,
     title:$("title").value.trim(),
     author:$("author").value.trim(),
-    series:$("series").value.trim(),
+    universe:$("universe").value.trim(),
+    cycle:$("cycle").value.trim(),
+    series:$("universe").value.trim(),
     volume:$("volume").value.trim(),
     format:$("format").value,
     containsVolumes:$("containsVolumes").value.trim(),
@@ -616,7 +660,7 @@ function openDetail(id){
   banner.className = `detail-status-banner ${b.status}`;
   banner.textContent = `${statusLabel(b.status)}${locationOf(b) ? " · Emplacement " + locationOf(b) : ""}`;
   const rows = [
-    ["Auteur",b.author],["Catégorie",b.category],["Série",b.series],["Tome",b.volume],
+    ["Auteur",b.author],["Catégorie",b.category],["Univers",universeOf(b)],["Cycle",cycleOf(b)],["Tome",b.volume],
     ["Type",b.format],["Contient les tomes",b.containsVolumes],["Collection",b.collection],
     ["ISBN",b.isbn],["Éditeur",b.publisher],["Année",b.year],["Nombre d’exemplaires",b.quantity||1],["Emplacement",locationOf(b)],
     ["Statut",statusLabel(b.status)],["État",b.condition||""],["Lu",b.read?"Oui":"Non"],["Favori",b.favorite?"Oui":"Non"],["Étiquettes",b.tags||""],["Commentaire",b.notes]
@@ -822,9 +866,11 @@ $("searchInput").addEventListener("input",render);
 
 $("seriesBtn").addEventListener("click",()=>{renderSeries();showView("seriesView");});
 $("seriesSearchInput").addEventListener("input",renderSeries);
+$("universe").addEventListener("input",refreshSuggestions);
 $("closeSeriesDialog").addEventListener("click",()=>$("seriesDialog").close());
 $("author").addEventListener("blur",applySmartDefaults);
-$("series").addEventListener("blur",applySmartDefaults);
+$("universe").addEventListener("blur",applySmartDefaults);
+$("cycle").addEventListener("blur",applySmartDefaults);
 
 $("addBtn").addEventListener("click",()=>openForm());
 $("inventoryBtn").addEventListener("click",()=>showView("inventoryView"));
@@ -864,7 +910,7 @@ $("locationSearchBtn").addEventListener("click",()=>{
     const btn = document.createElement("button");
     btn.className = "result-item";
     btn.innerHTML = `<strong>${escapeHtml(b.title)}${b.favorite ? '<span class="favorite-mark">★</span>' : ''}</strong>
-      <div class="meta">${escapeHtml(b.author)}${b.series ? " · "+escapeHtml(b.series) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
+      <div class="meta">${escapeHtml(b.author)}${universeOf(b) ? " · "+escapeHtml(universeOf(b)) : ""}${cycleOf(b) ? " · "+escapeHtml(cycleOf(b)) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
       <div class="meta">${categoryLabel(b.category)} · ${escapeHtml(b.format)} · 📍 ${escapeHtml(locationOf(b))}</div>
       <span class="badge ${b.status}">${statusLabel(b.status)}</span>`;
     btn.addEventListener("click",()=>openDetail(b.id));
