@@ -1,4 +1,4 @@
-# BiblioPerso V0.8 — PWA iPhone
+# BiblioPerso V0.9 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -20,3 +20,9 @@ Publier ce dossier sur GitHub Pages ou Cloudflare Pages. Une fois l’adresse ob
 3. choisir « Sur l’écran d’accueil ».
 
 Les 1 800 ouvrages ne seront pas stockés dans l’hébergement : ils resteront sur l’iPhone ou le PC.
+
+
+## Nouveautés V0.9
+- tableau de bord avec total, séries, ouvrages à acheter et dernier emplacement ;
+- accès direct à une étagère par son code (ex. D4) ;
+- fiche d’ouvrage plus lisible avec statut et emplacement mis en avant.

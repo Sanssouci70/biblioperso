@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V0.8</title>
+  <title>BiblioPerso V0.9</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -21,6 +21,19 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+
+.dashboard-panel{margin-bottom:14px}
+.dashboard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.dashboard-grid>div{background:#fff;border:1px solid #ddd4c8;border-radius:14px;padding:13px}
+.dashboard-grid span{display:block;color:#6f675e;font-size:.82rem}
+.dashboard-grid strong{display:block;font-size:1.25rem;margin-top:3px}
+.location-search-row{display:grid;grid-template-columns:1fr auto;gap:10px}
+.detail-status-banner{padding:12px;border-radius:12px;margin:10px 0 12px;font-weight:700;background:#eee8df}
+.detail-status-banner.owned{background:#e8f3e8}
+.detail-status-banner.buy{background:#fff1c7}
+.detail-status-banner.loaned{background:#ffe1e1}
+.detail-status-banner.wish{background:#e8e3ff}
 
 .install-steps{padding-left:22px;line-height:1.7}
 .install-steps li{margin-bottom:10px}
@@ -72,7 +85,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 0.8 · installable sur iPhone</p>
+      <p class="subtitle">Version 0.9 · tableau de bord</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -84,6 +97,26 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <button class="stat-card" data-filter="Roman"><strong id="romanCount">0</strong><span>Romans</span></button>
         <button class="stat-card" data-filter="Autre"><strong id="otherCount">0</strong><span>Autres</span></button>
       </div>
+
+
+      <section class="dashboard-panel">
+        <div class="dashboard-grid">
+          <div><span>Total</span><strong id="totalCount">0</strong></div>
+          <div><span>Séries</span><strong id="seriesCount">0</strong></div>
+          <div><span>À acheter</span><strong id="buyCount">0</strong></div>
+          <div><span>Dernier emplacement</span><strong id="lastLocation">—</strong></div>
+        </div>
+      </section>
+
+      <section class="panel location-panel">
+        <div class="panel-head">
+          <h2>Aller à un emplacement</h2>
+        </div>
+        <div class="location-search-row">
+          <input id="locationSearchInput" maxlength="8" placeholder="Ex. D4">
+          <button id="locationSearchBtn">Afficher</button>
+        </div>
+      </section>
 
       <label class="search-box">
         <span>🔎</span>
@@ -286,7 +319,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Version PWA installable sur iPhone, fonctionnement hors ligne après la première ouverture et préparation complète du scan caméra en HTTPS.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Tableau de bord enrichi, total des ouvrages, nombre de séries, liste à acheter, dernier emplacement utilisé, recherche directe par emplacement et fiche plus lisible.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -295,6 +328,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
       <h2 id="detailTitle"></h2>
       <button id="closeDialog" class="icon-btn">✕</button>
     </div>
+    <div id="detailStatusBanner" class="detail-status-banner"></div>
     <div id="detailBody"></div>
     <button id="editBookBtn" class="primary">Modifier</button>
   </dialog>
@@ -372,7 +406,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"0.8",
+    version:"0.9",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -488,6 +522,12 @@ function render() {
   $("romanCount").textContent = books.filter(b=>b.category==="Roman" && b.status==="owned").length;
   $("otherCount").textContent = books.filter(b=>b.category==="Autre" && b.status==="owned").length;
 
+  $("totalCount").textContent = books.filter(b=>b.status==="owned").reduce((sum,b)=>sum+Number(b.quantity||1),0);
+  $("seriesCount").textContent = new Set(books.filter(b=>b.series).map(b=>normalize(b.series))).size;
+  $("buyCount").textContent = books.filter(b=>b.status==="buy").length;
+  $("lastLocation").textContent = localStorage.getItem("biblioperso_last_location") || "—";
+
+
   const q = normalize($("searchInput").value);
   let filtered = books.filter(b => {
     if (!q) return true;
@@ -571,6 +611,9 @@ function openDetail(id){
   const b = books.find(x=>x.id===id); if(!b) return;
   currentBookId = id;
   $("detailTitle").textContent = b.title;
+  const banner = $("detailStatusBanner");
+  banner.className = `detail-status-banner ${b.status}`;
+  banner.textContent = `${statusLabel(b.status)}${locationOf(b) ? " · Emplacement " + locationOf(b) : ""}`;
   const rows = [
     ["Auteur",b.author],["Catégorie",b.category],["Série",b.series],["Tome",b.volume],
     ["Type",b.format],["Contient les tomes",b.containsVolumes],["Collection",b.collection],
@@ -793,6 +836,35 @@ $("wishlistBtn").addEventListener("click",()=>{
     $("resultCount").textContent=buy.length;
   }
 });
+
+$("locationSearchBtn").addEventListener("click",()=>{
+  const loc = $("locationSearchInput").value.trim().toUpperCase().replace(/\s+/g,"");
+  if(!loc){alert("Indique un emplacement, par exemple D4.");return;}
+  $("searchInput").value = "";
+  document.querySelectorAll(".stat-card").forEach(x=>x.classList.remove("active"));
+  const matching = books.filter(b=>locationOf(b)===loc).sort((a,b)=>a.title.localeCompare(b.title,"fr"));
+  $("resultCount").textContent = matching.length;
+  const box = $("results");
+  if(!matching.length){
+    box.className = "results empty";
+    box.textContent = `Aucun ouvrage à l’emplacement ${loc}.`;
+    return;
+  }
+  box.className = "results";
+  box.innerHTML = "";
+  matching.forEach(b=>{
+    const btn = document.createElement("button");
+    btn.className = "result-item";
+    btn.innerHTML = `<strong>${escapeHtml(b.title)}${b.favorite ? '<span class="favorite-mark">★</span>' : ''}</strong>
+      <div class="meta">${escapeHtml(b.author)}${b.series ? " · "+escapeHtml(b.series) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
+      <div class="meta">${categoryLabel(b.category)} · ${escapeHtml(b.format)} · 📍 ${escapeHtml(locationOf(b))}</div>
+      <span class="badge ${b.status}">${statusLabel(b.status)}</span>`;
+    btn.addEventListener("click",()=>openDetail(b.id));
+    box.appendChild(btn);
+  });
+});
+$("locationSearchInput").addEventListener("keydown",e=>{if(e.key==="Enter") $("locationSearchBtn").click();});
+
 $("menuBtn").addEventListener("click",()=>{renderSnapshots();showView("menuView");});
 $("quickBackupBtn").addEventListener("click",()=>{downloadBackup();alert("La sauvegarde a été téléchargée.");});
 $("installHelpBtn").addEventListener("click",()=>showView("installView"));
@@ -807,6 +879,7 @@ document.querySelectorAll(".stat-card").forEach(btn=>btn.addEventListener("click
 $("bookForm").addEventListener("submit",e=>{
   e.preventDefault();
   const data=getFormData();
+  if(data.location) localStorage.setItem("biblioperso_last_location", data.location);
   const idx=books.findIndex(b=>b.id===data.id);
   makeSnapshot(idx>=0 ? "Avant modification d’un ouvrage" : "Avant ajout d’un ouvrage");
   if(idx>=0) books[idx]=data; else books.push(data);
