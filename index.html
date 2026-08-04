@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V1.0</title>
+  <title>BiblioPerso V1.1</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -26,6 +26,11 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+
+.location-card{display:flex;justify-content:space-between;align-items:center;padding:13px;border:1px solid #e1d9cf;border-radius:12px;background:#fcfaf7}
+.location-card strong{font-size:1.05rem}
+.inventory-banner{padding:10px 12px;border-radius:12px;background:#e8f3e8;margin-bottom:12px}
 
 .filter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .consistency-ok{padding:14px;border-radius:12px;background:#e8f3e8}
@@ -112,7 +117,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 1.0 · prête pour l’inventaire</p>
+      <p class="subtitle">Version 1.1 · mode inventaire</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -201,7 +206,8 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <button id="addBtn" class="primary">＋ Ajouter un ouvrage</button>
         <button id="dashboardBtn">📊 Tableau de bord</button>
         <button id="scanBtn">📷 Scanner un ISBN</button>
-        <button id="inventoryBtn">▦ Inventaire par étagère</button>
+        <button id="inventoryBtn">📦 Commencer un inventaire</button>
+        <button id="locationsBtn">📍 Emplacements</button>
         <button id="wishlistBtn">🛒 À acheter</button>
         <button id="seriesBtn">📚 Univers et cycles</button>
         <button id="missingBtn">📋 Ce qui me manque</button>
@@ -310,123 +316,41 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
     <section id="inventoryView" class="view">
       <div class="view-title">
         <button class="back-btn" data-back>←</button>
-        <h2>Inventaire par étagère</h2>
+        <h2>Mode Inventaire</h2>
       </div>
 
-      <div class="panel">
+      <div id="inventorySetup" class="panel">
         <label>Emplacement
-          <input id="inventoryLocation" maxlength="8" placeholder="Ex. A1">
+          <input id="inventoryLocation" maxlength="8" placeholder="Ex. D4">
+        </label>
+        <label class="check-label">
+          <input id="inventoryKeepFields" type="checkbox" checked>
+          Conserver auteur, univers, cycle, éditeur, collection et type entre deux ouvrages
         </label>
         <button id="startInventory" class="primary">Commencer</button>
       </div>
 
       <div id="inventorySession" class="panel hidden">
         <h3 id="inventoryTitle">Étagère</h3>
-        <p><strong id="inventoryCount">0</strong> ouvrage(s) enregistré(s) pendant cette session.</p>
-        <button id="inventoryAdd" class="primary">＋ Ajouter le prochain ouvrage</button>
-        <button id="finishInventory">✓ Terminer l’étagère</button>
-      </div>
-    </section>
-
-
-
-
-
-
-
-    <section id="consistencyView" class="view">
-      <div class="view-title">
-        <button class="back-btn" data-back>←</button>
-        <h2>Contrôle de cohérence</h2>
-      </div>
-      <div id="consistencySummary" class="panel"></div>
-      <div id="consistencyResults" class="results empty">Aucune anomalie détectée.</div>
-    </section>
-
-    <section id="upcomingView" class="view">
-      <div class="view-title">
-        <button class="back-btn" data-back>←</button>
-        <h2>Sorties à venir</h2>
-      </div>
-      <label class="search-box">
-        <span>🔎</span>
-        <input id="upcomingSearchInput" type="search" placeholder="Filtrer par univers ou cycle" autocomplete="off">
-      </label>
-      <div id="upcomingResults" class="results empty">Aucune sortie annoncée.</div>
-    </section>
-
-    <section id="missingView" class="view">
-      <div class="view-title">
-        <button class="back-btn" data-back>←</button>
-        <h2>Ce qui me manque</h2>
-      </div>
-      <label class="search-box">
-        <span>🔎</span>
-        <input id="missingSearchInput" type="search" placeholder="Filtrer par univers ou cycle" autocomplete="off">
-      </label>
-      <div id="missingResults" class="results empty">Aucun tome manquant détecté.</div>
-    </section>
-
-    <section id="installView" class="view">
-      <div class="view-title">
-        <button class="back-btn" data-back>←</button>
-        <h2>Installer sur iPhone</h2>
-      </div>
-      <div class="panel">
-        <ol class="install-steps">
-          <li>Ouvre l’adresse de BiblioPerso dans <strong>Safari</strong>.</li>
-          <li>Touche le bouton <strong>Partager</strong>.</li>
-          <li>Choisis <strong>Sur l’écran d’accueil</strong>.</li>
-          <li>Valide avec <strong>Ajouter</strong>.</li>
-        </ol>
-        <p class="small-note">L’application s’ouvrira ensuite depuis une icône, comme une application classique.</p>
-      </div>
-      <div class="panel">
-        <h3>Important</h3>
-        <p class="small-note">La caméra de l’iPhone nécessite une adresse sécurisée en HTTPS. Le fichier local seul ne peut pas activer le scan caméra.</p>
-      </div>
-    </section>
-
-    <section id="scanView" class="view">
-      <div class="view-title">
-        <button class="back-btn" data-back>←</button>
-        <h2>Scanner un ISBN</h2>
-      </div>
-
-      <div class="panel scan-panel">
-        <video id="scanVideo" class="scan-video hidden" playsinline muted></video>
-        <div id="scanPlaceholder" class="scan-placeholder">
-          <div class="scan-icon">▦</div>
-          <strong>Scanner le code-barres du livre</strong>
-          <p class="small-note">La caméra fonctionne lorsque l’application est ouverte depuis une adresse sécurisée. La saisie manuelle reste toujours disponible.</p>
+        <p><strong id="inventoryCount">0</strong> ouvrage(s) ajouté(s) pendant cette session.</p>
+        <div class="primary-actions">
+          <button id="inventoryAdd" class="primary">＋ Ajouter le prochain ouvrage</button>
+          <button id="changeInventoryLocation">➡ Changer d’emplacement</button>
+          <button id="finishInventory">✓ Terminer la séance</button>
         </div>
-
-        <div class="scan-actions">
-          <button id="startCameraBtn" class="primary">Ouvrir la caméra</button>
-          <button id="stopCameraBtn" class="hidden">Arrêter la caméra</button>
-        </div>
-
-        <div id="scanStatus" class="smart-note">Prêt.</div>
-      </div>
-
-      <div class="panel">
-        <label>Saisir ou coller un ISBN
-          <input id="manualScanIsbn" inputmode="numeric" placeholder="978…" autocomplete="off">
-        </label>
-        <button id="manualScanSearch" class="primary">Rechercher les informations</button>
       </div>
     </section>
 
-    <section id="seriesView" class="view">
+    <section id="locationsView" class="view">
       <div class="view-title">
         <button class="back-btn" data-back>←</button>
-        <h2>Univers et cycles</h2>
+        <h2>Emplacements</h2>
       </div>
       <label class="search-box">
         <span>🔎</span>
-        <input id="seriesSearchInput" type="search" placeholder="Rechercher un univers ou un cycle" autocomplete="off">
+        <input id="locationsSearchInput" type="search" placeholder="Filtrer les emplacements" autocomplete="off">
       </label>
-      <div id="seriesResults" class="results empty">Aucun univers enregistré.</div>
+      <div id="locationsResults" class="results empty">Aucun emplacement enregistré.</div>
     </section>
 
     <section id="menuView" class="view">
@@ -449,7 +373,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Recherche avancée avec filtres, contrôle de cohérence, détection des ISBN invalides, doublons possibles et informations manquantes.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Mode inventaire amélioré, conservation intelligente des champs, changement rapide d’emplacement, sauvegarde proposée en fin de séance, navigation par emplacement et favoris sur trois niveaux.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -479,6 +403,8 @@ let books = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let currentBookId = null;
 let inventoryLocation = null;
 let inventoryStartCount = 0;
+let inventoryTemplate = null;
+let inventoryAddedIds = [];
 
 const $ = (id) => document.getElementById(id);
 const views = [...document.querySelectorAll(".view")];
@@ -536,7 +462,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"1.0",
+    version:"1.1",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -727,6 +653,7 @@ function renderUpcoming(){
         });
         save(false);
         renderUpcoming();
+  renderLocations();
         alert("Ajouté à la liste « À acheter ».");
       });
       actions.appendChild(btn);
@@ -869,7 +796,7 @@ function matchesFilters(b){
   if(f.format && b.format !== f.format) return false;
   if(f.read === "yes" && !b.read) return false;
   if(f.read === "no" && b.read) return false;
-  if(f.favorite === "yes" && !b.favorite) return false;
+  if(f.favorite === "yes" && !(b.favorite || Number(b.favoriteLevel||0)>0)) return false;
   if(f.location && locationOf(b) !== f.location) return false;
   return true;
 }
@@ -938,6 +865,43 @@ function runConsistencyCheck(){
   });
 }
 
+
+function buildLocationMap(){
+  const map = new Map();
+  books.filter(b=>locationOf(b)).forEach(b=>{
+    const loc=locationOf(b);
+    if(!map.has(loc)) map.set(loc,[]);
+    map.get(loc).push(b);
+  });
+  return map;
+}
+function renderLocations(){
+  const q=normalize($("locationsSearchInput")?.value || "");
+  const entries=[...buildLocationMap().entries()]
+    .filter(([loc])=>!q || normalize(loc).includes(q))
+    .sort((a,b)=>a[0].localeCompare(b[0],"fr",{numeric:true}));
+  const box=$("locationsResults");
+  if(!box) return;
+  if(!entries.length){
+    box.className="results empty";
+    box.textContent="Aucun emplacement enregistré.";
+    return;
+  }
+  box.className="results";
+  box.innerHTML="";
+  entries.forEach(([loc,items])=>{
+    const btn=document.createElement("button");
+    btn.className="location-card";
+    btn.innerHTML=`<strong>${escapeHtml(loc)}</strong><span>${items.length} ouvrage(s)</span>`;
+    btn.addEventListener("click",()=>{
+      showView("homeView");
+      $("locationSearchInput").value=loc;
+      $("locationSearchBtn").click();
+    });
+    box.appendChild(btn);
+  });
+}
+
 function render() {
   $("bdCount").textContent = books.filter(b=>b.category==="BD" && b.status==="owned").length;
   $("romanCount").textContent = books.filter(b=>b.category==="Roman" && b.status==="owned").length;
@@ -975,7 +939,7 @@ function render() {
   filtered.forEach(b=>{
     const btn = document.createElement("button");
     btn.className = "result-item";
-    btn.innerHTML = `<strong>${escapeHtml(b.title)}${b.favorite ? '<span class="favorite-mark">★</span>' : ''}</strong>
+    btn.innerHTML = `<strong>${escapeHtml(b.title)}${Number(b.favoriteLevel||0)>0 ? `<span class="favorite-mark">${'★'.repeat(Number(b.favoriteLevel||1))}</span>` : (b.favorite ? '<span class="favorite-mark">★</span>' : '')}</strong>
       <div class="meta">${escapeHtml(b.author)}${universeOf(b) ? " · "+escapeHtml(universeOf(b)) : ""}${cycleOf(b) ? " · "+escapeHtml(cycleOf(b)) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
       <div class="meta">${categoryLabel(b.category)} · ${escapeHtml(b.format)} · 📍 ${escapeHtml(locationOf(b))}</div>
       <span class="badge ${b.status}">${statusLabel(b.status)}</span>${Number(b.quantity||1)>1 ? `<span class="badge">×${Number(b.quantity)}</span>` : ""}`;
@@ -991,13 +955,20 @@ function openForm(book=null) {
   $("formTitle").textContent = book ? "Modifier l’ouvrage" : "Ajouter un ouvrage";
   $("deleteBtn").classList.toggle("hidden", !book);
   currentBookId = book?.id || null;
-  const fields = ["category","title","author","universe","cycle","publishedVolumes","nextVolume","nextReleaseDate","volume","format","containsVolumes","collection","isbn","publisher","year","location","status","condition","tags","notes","quantity"];
+  const fields = ["category","title","author","universe","cycle","publishedVolumes","nextVolume","nextReleaseDate","volume","format","containsVolumes","collection","isbn","publisher","year","location","status","condition","tags","notes","quantity","favoriteLevel"];
   fields.forEach(f=>{ if(book && book[f] !== undefined) $(f).value = book[f]; });
   if(book && !$("universe").value) $("universe").value = book.series || "";
   $("read").checked = !!book?.read;
-  $("favorite").checked = !!book?.favorite;
+  $("favoriteLevel").value = String(book?.favoriteLevel ?? (book?.favorite ? 1 : 0));
   if (book && !$("location").value) $("location").value = locationOf(book);
-  if (!book && inventoryLocation) $("location").value = inventoryLocation.location;
+  if (!book && inventoryLocation) {
+    $("location").value = inventoryLocation.location;
+    if(inventoryTemplate && $("inventoryKeepFields").checked){
+      ["category","author","universe","cycle","format","collection","publisher"].forEach(f=>{
+        if(inventoryTemplate[f] !== undefined) $(f).value = inventoryTemplate[f];
+      });
+    }
+  }
   if (!book) $("quantity").value = "1";
   activateTab("generalTab");
   showView("formView");
@@ -1031,7 +1002,8 @@ function getFormData(){
     status:$("status").value,
     condition:$("condition").value,
     read:$("read").checked,
-    favorite:$("favorite").checked,
+    favoriteLevel:Number($("favoriteLevel").value || 0),
+    favorite:Number($("favoriteLevel").value || 0) > 0,
     tags:$("tags").value.trim(),
     notes:$("notes").value.trim()
   };
@@ -1048,7 +1020,7 @@ function openDetail(id){
     ["Auteur",b.author],["Catégorie",b.category],["Univers",universeOf(b)],["Cycle",cycleOf(b)],["Tomes parus",b.publishedVolumes||""],["Prochain tome",b.nextVolume||""],["Date annoncée",b.nextReleaseDate||""],["Tome",b.volume],
     ["Type",b.format],["Contient les tomes",b.containsVolumes],["Collection",b.collection],
     ["ISBN",b.isbn],["Éditeur",b.publisher],["Année",b.year],["Nombre d’exemplaires",b.quantity||1],["Emplacement",locationOf(b)],
-    ["Statut",statusLabel(b.status)],["État",b.condition||""],["Lu",b.read?"Oui":"Non"],["Favori",b.favorite?"Oui":"Non"],["Étiquettes",b.tags||""],["Commentaire",b.notes]
+    ["Statut",statusLabel(b.status)],["État",b.condition||""],["Lu",b.read?"Oui":"Non"],["Favori",Number(b.favoriteLevel||0)>0 ? "★".repeat(Number(b.favoriteLevel||1)) : (b.favorite?"★":"Non")],["Étiquettes",b.tags||""],["Commentaire",b.notes]
   ].filter(r=>r[1]);
   $("detailBody").innerHTML = rows.map(([k,v])=>`<div class="detail-row"><strong>${escapeHtml(k)} :</strong> ${escapeHtml(v)}</div>`).join("");
   $("detailDialog").showModal();
@@ -1280,6 +1252,8 @@ $("cycle").addEventListener("blur",applySmartDefaults);
 
 $("addBtn").addEventListener("click",()=>openForm());
 $("inventoryBtn").addEventListener("click",()=>showView("inventoryView"));
+$("locationsBtn").addEventListener("click",()=>{renderLocations();showView("locationsView");});
+$("locationsSearchInput").addEventListener("input",renderLocations);
 $("wishlistBtn").addEventListener("click",()=>{
   $("searchInput").value="";
   document.querySelectorAll(".stat-card").forEach(x=>x.classList.remove("active"));
@@ -1315,7 +1289,7 @@ $("locationSearchBtn").addEventListener("click",()=>{
   matching.forEach(b=>{
     const btn = document.createElement("button");
     btn.className = "result-item";
-    btn.innerHTML = `<strong>${escapeHtml(b.title)}${b.favorite ? '<span class="favorite-mark">★</span>' : ''}</strong>
+    btn.innerHTML = `<strong>${escapeHtml(b.title)}${Number(b.favoriteLevel||0)>0 ? `<span class="favorite-mark">${'★'.repeat(Number(b.favoriteLevel||1))}</span>` : (b.favorite ? '<span class="favorite-mark">★</span>' : '')}</strong>
       <div class="meta">${escapeHtml(b.author)}${universeOf(b) ? " · "+escapeHtml(universeOf(b)) : ""}${cycleOf(b) ? " · "+escapeHtml(cycleOf(b)) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
       <div class="meta">${categoryLabel(b.category)} · ${escapeHtml(b.format)} · 📍 ${escapeHtml(locationOf(b))}</div>
       <span class="badge ${b.status}">${statusLabel(b.status)}</span>`;
@@ -1342,7 +1316,16 @@ $("bookForm").addEventListener("submit",e=>{
   if(data.location) localStorage.setItem("biblioperso_last_location", data.location);
   const idx=books.findIndex(b=>b.id===data.id);
   makeSnapshot(idx>=0 ? "Avant modification d’un ouvrage" : "Avant ajout d’un ouvrage");
-  if(idx>=0) books[idx]=data; else books.push(data);
+  if(idx>=0) books[idx]=data; else {
+    books.push(data);
+    if(inventoryLocation){
+      inventoryAddedIds.push(data.id);
+      inventoryTemplate = {
+        category:data.category, author:data.author, universe:data.universe, cycle:data.cycle,
+        format:data.format, collection:data.collection, publisher:data.publisher
+      };
+    }
+  }
   save(false);
   if(inventoryLocation){
     $("inventoryCount").textContent = books.filter(b=>locationOf(b)===inventoryLocation.location).length - inventoryStartCount;
@@ -1364,14 +1347,35 @@ $("startInventory").addEventListener("click",()=>{
   if(!location){alert("Indique l’emplacement.");return;}
   inventoryLocation={location};
   inventoryStartCount=books.filter(b=>locationOf(b)===location).length;
+  inventoryAddedIds=[];
+  inventoryTemplate=null;
   $("inventoryTitle").textContent=`Étagère ${location}`;
   $("inventoryCount").textContent="0";
+  $("inventorySetup").classList.add("hidden");
   $("inventorySession").classList.remove("hidden");
 });
 $("inventoryAdd").addEventListener("click",()=>openForm());
+$("changeInventoryLocation").addEventListener("click",()=>{
+  const next=prompt("Nouvel emplacement :", inventoryLocation?.location || "");
+  if(!next) return;
+  inventoryLocation={location:next.trim().toUpperCase().replace(/\s+/g,"")};
+  inventoryStartCount=books.filter(b=>locationOf(b)===inventoryLocation.location).length;
+  inventoryAddedIds=[];
+  inventoryTemplate=null;
+  $("inventoryTitle").textContent=`Étagère ${inventoryLocation.location}`;
+  $("inventoryCount").textContent="0";
+});
 $("finishInventory").addEventListener("click",()=>{
-  if(inventoryLocation) alert(`Étagère ${inventoryLocation.location} terminée.`);
-  inventoryLocation=null; $("inventorySession").classList.add("hidden"); showView("homeView");
+  const added=inventoryAddedIds.length;
+  if(added>0 && confirm(`Vous avez ajouté ${added} ouvrage(s). Télécharger une sauvegarde maintenant ?`)){
+    downloadBackup();
+  }
+  inventoryLocation=null;
+  inventoryTemplate=null;
+  inventoryAddedIds=[];
+  $("inventorySession").classList.add("hidden");
+  $("inventorySetup").classList.remove("hidden");
+  showView("homeView");
 });
 
 $("exportBtn").addEventListener("click",downloadBackup);
