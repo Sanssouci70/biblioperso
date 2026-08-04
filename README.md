@@ -1,4 +1,4 @@
-# BiblioPerso V1.1 — PWA iPhone
+# BiblioPerso V1.1.1 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -75,3 +75,9 @@ Les 1 800 ouvrages ne seront pas stockés dans l’hébergement : ils resteront 
 - proposition de sauvegarde à la fin d’une séance ;
 - page « Emplacements » ;
 - favoris sur trois niveaux.
+
+
+## Correctif V1.1.1
+- rétablit les écrans manquants ;
+- corrige les boutons Ajouter, Scanner et Inventaire ;
+- répare le champ de favori à trois niveaux.

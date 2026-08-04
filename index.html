@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V1.1</title>
+  <title>BiblioPerso V1.1.1</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -117,7 +117,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 1.1 · mode inventaire</p>
+      <p class="subtitle">Version 1.1.1 · correctif</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -301,7 +301,14 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
             </select>
           </label>
           <label class="check-label"><input id="read" type="checkbox"> Lu</label>
-          <label class="check-label"><input id="favorite" type="checkbox"> Favori</label>
+          <label>Niveau de favori
+            <select id="favoriteLevel">
+              <option value="0">Aucun</option>
+              <option value="1">★ J’aime</option>
+              <option value="2">★★ Excellent</option>
+              <option value="3">★★★ Incontournable</option>
+            </select>
+          </label>
           <label>Étiquettes<input id="tags" placeholder="Ex. dédicacé, cadeau, collection"></label>
           <label>Commentaire<textarea id="notes" rows="3"></textarea></label>
         </section>
@@ -325,7 +332,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         </label>
         <label class="check-label">
           <input id="inventoryKeepFields" type="checkbox" checked>
-          Conserver auteur, univers, cycle, éditeur, collection et type entre deux ouvrages
+          Conserver auteur, univers, cycle, éditeur, collection et type
         </label>
         <button id="startInventory" class="primary">Commencer</button>
       </div>
@@ -353,6 +360,92 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
       <div id="locationsResults" class="results empty">Aucun emplacement enregistré.</div>
     </section>
 
+    <section id="consistencyView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Contrôle de cohérence</h2>
+      </div>
+      <div id="consistencySummary" class="panel"></div>
+      <div id="consistencyResults" class="results empty">Aucune anomalie détectée.</div>
+    </section>
+
+    <section id="upcomingView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Sorties à venir</h2>
+      </div>
+      <label class="search-box">
+        <span>🔎</span>
+        <input id="upcomingSearchInput" type="search" placeholder="Filtrer par univers ou cycle" autocomplete="off">
+      </label>
+      <div id="upcomingResults" class="results empty">Aucune sortie annoncée.</div>
+    </section>
+
+    <section id="missingView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Ce qui me manque</h2>
+      </div>
+      <label class="search-box">
+        <span>🔎</span>
+        <input id="missingSearchInput" type="search" placeholder="Filtrer par univers ou cycle" autocomplete="off">
+      </label>
+      <div id="missingResults" class="results empty">Aucun tome manquant détecté.</div>
+    </section>
+
+    <section id="installView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Installer sur iPhone</h2>
+      </div>
+      <div class="panel">
+        <ol class="install-steps">
+          <li>Ouvre l’adresse dans <strong>Safari</strong>.</li>
+          <li>Touche <strong>Partager</strong>.</li>
+          <li>Choisis <strong>Sur l’écran d’accueil</strong>.</li>
+          <li>Valide avec <strong>Ajouter</strong>.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="scanView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Scanner un ISBN</h2>
+      </div>
+      <div class="panel scan-panel">
+        <video id="scanVideo" class="scan-video hidden" playsinline muted></video>
+        <div id="scanPlaceholder" class="scan-placeholder">
+          <div class="scan-icon">▦</div>
+          <strong>Scanner le code-barres du livre</strong>
+          <p class="small-note">Autorise la caméra quand l’iPhone le demande.</p>
+        </div>
+        <div class="scan-actions">
+          <button id="startCameraBtn" class="primary">Ouvrir la caméra</button>
+          <button id="stopCameraBtn" class="hidden">Arrêter la caméra</button>
+        </div>
+        <div id="scanStatus" class="smart-note">Prêt.</div>
+      </div>
+      <div class="panel">
+        <label>Saisir ou coller un ISBN
+          <input id="manualScanIsbn" inputmode="numeric" placeholder="978…" autocomplete="off">
+        </label>
+        <button id="manualScanSearch" class="primary">Rechercher les informations</button>
+      </div>
+    </section>
+
+    <section id="seriesView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Univers et cycles</h2>
+      </div>
+      <label class="search-box">
+        <span>🔎</span>
+        <input id="seriesSearchInput" type="search" placeholder="Rechercher un univers ou un cycle" autocomplete="off">
+      </label>
+      <div id="seriesResults" class="results empty">Aucun univers enregistré.</div>
+    </section>
+
     <section id="menuView" class="view">
       <div class="view-title">
         <button class="back-btn" data-back>←</button>
@@ -373,7 +466,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Mode inventaire amélioré, conservation intelligente des champs, changement rapide d’emplacement, sauvegarde proposée en fin de séance, navigation par emplacement et favoris sur trois niveaux.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Correctif V1.1.1</h3><p class="small-note">Mode inventaire amélioré, conservation intelligente des champs, changement rapide d’emplacement, sauvegarde proposée en fin de séance, navigation par emplacement et favoris sur trois niveaux.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
