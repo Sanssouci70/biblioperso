@@ -1,4 +1,4 @@
-# BiblioPerso V1.2 — PWA iPhone
+# BiblioPerso V1.2.1 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -119,3 +119,13 @@ Après la mise à jour GitHub, ouvre d’abord l’adresse dans Safari et rechar
 - suggestion automatique d’univers, cycle et tome à partir des données existantes ;
 - détection renforcée des doublons par ISBN et par ouvrage proche ;
 - confirmation avant enregistrement d’un doublon volontaire.
+
+
+## Correctif V1.2.1
+- la fiche s’ouvre immédiatement dès qu’un ISBN valide est détecté ;
+- l’ISBN détecté est affiché ;
+- la recherche bibliographique se fait ensuite en arrière-plan ;
+- interrogation parallèle de Google Books et Open Library ;
+- fusion des informations disponibles ;
+- message clair si aucune fiche n’est trouvée ;
+- bouton pour relancer manuellement la recherche.
