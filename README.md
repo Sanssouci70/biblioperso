@@ -1,4 +1,4 @@
-# BiblioPerso V1.2.1 — PWA iPhone
+# BiblioPerso V1.3 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -129,3 +129,13 @@ Après la mise à jour GitHub, ouvre d’abord l’adresse dans Safari et rechar
 - fusion des informations disponibles ;
 - message clair si aucune fiche n’est trouvée ;
 - bouton pour relancer manuellement la recherche.
+
+
+## Nouveautés V1.3
+- recherche fiable à partir d’un ISBN saisi ou collé ;
+- validation ISBN-10 et ISBN-13 ;
+- détection immédiate d’un ISBN déjà enregistré ;
+- récupération automatique du titre, auteur, éditeur, année, pages et langue ;
+- interrogation de Google Books et Open Library ;
+- ouverture automatique de la fiche préremplie ;
+- scan caméra retiré temporairement de l’interface, en attendant une version plus fiable.
