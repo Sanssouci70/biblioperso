@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V0.9</title>
+  <title>BiblioPerso V0.9.1</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -85,7 +85,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 0.9 · tableau de bord</p>
+      <p class="subtitle">Version 0.9.1</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -99,7 +99,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
       </div>
 
 
-      <section class="dashboard-panel">
+      <section id="dashboardPanel" class="dashboard-panel hidden">
         <div class="dashboard-grid">
           <div><span>Total</span><strong id="totalCount">0</strong></div>
           <div><span>Séries</span><strong id="seriesCount">0</strong></div>
@@ -108,7 +108,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         </div>
       </section>
 
-      <section class="panel location-panel">
+      <section id="locationPanel" class="panel location-panel hidden">
         <div class="panel-head">
           <h2>Aller à un emplacement</h2>
         </div>
@@ -125,6 +125,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
       <div class="primary-actions">
         <button id="addBtn" class="primary">＋ Ajouter un ouvrage</button>
+        <button id="dashboardBtn">📊 Tableau de bord</button>
         <button id="scanBtn">📷 Scanner un ISBN</button>
         <button id="inventoryBtn">▦ Inventaire par étagère</button>
         <button id="wishlistBtn">🛒 À acheter</button>
@@ -319,7 +320,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Tableau de bord enrichi, total des ouvrages, nombre de séries, liste à acheter, dernier emplacement utilisé, recherche directe par emplacement et fiche plus lisible.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Nouveautés V0.7</h3><p class="small-note">Tableau de bord masqué par défaut et accessible depuis un bouton placé entre « Ajouter un ouvrage » et « Scanner un ISBN ».</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -406,7 +407,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"0.9",
+    version:"0.9.1",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -797,6 +798,13 @@ function stopCamera(){
   $("startCameraBtn").classList.remove("hidden");
   $("stopCameraBtn").classList.add("hidden");
 }
+
+
+$("dashboardBtn").addEventListener("click",()=>{
+  const hidden = $("dashboardPanel").classList.toggle("hidden");
+  $("locationPanel").classList.toggle("hidden", hidden);
+  $("dashboardBtn").textContent = hidden ? "📊 Tableau de bord" : "✕ Masquer le tableau de bord";
+});
 
 $("scanBtn").addEventListener("click",()=>{
   $("manualScanIsbn").value = "";
