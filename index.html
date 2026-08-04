@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V1.1.1</title>
+  <title>BiblioPerso V1.1.2</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -74,6 +74,12 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 .snapshot-meta{font-size:.85rem;color:#6f675e}
 .snapshot-item button{padding:8px 10px}
 
+
+.scan-video-wrap{position:relative;width:100%;overflow:hidden;border-radius:14px;background:#111}
+.scan-video-wrap .scan-video{display:block;width:100%;min-height:260px;max-height:430px;object-fit:cover;border-radius:0}
+.scan-frame{position:absolute;left:8%;right:8%;top:38%;height:24%;border:3px solid #fff;border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.28)}
+.scan-frame::before{content:"";position:absolute;left:8%;right:8%;top:50%;height:2px;background:#fff;box-shadow:0 0 8px rgba(255,255,255,.85)}
+
 .scan-panel{display:grid;gap:12px}
 .scan-video{width:100%;max-height:360px;object-fit:cover;border-radius:14px;background:#111}
 .scan-placeholder{min-height:210px;display:grid;place-items:center;text-align:center;padding:24px;border:2px dashed #d4cabc;border-radius:14px;background:#faf7f2}
@@ -117,7 +123,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 1.1.1 · correctif</p>
+      <p class="subtitle">Version 1.1.2 · scan iPhone</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -414,7 +420,10 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <h2>Scanner un ISBN</h2>
       </div>
       <div class="panel scan-panel">
-        <video id="scanVideo" class="scan-video hidden" playsinline muted></video>
+        <div id="scanVideoWrap" class="scan-video-wrap hidden">
+          <video id="scanVideo" class="scan-video" playsinline muted></video>
+          <div class="scan-frame" aria-hidden="true"></div>
+        </div>
         <div id="scanPlaceholder" class="scan-placeholder">
           <div class="scan-icon">▦</div>
           <strong>Scanner le code-barres du livre</strong>
@@ -466,7 +475,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Correctif V1.1.1</h3><p class="small-note">Mode inventaire amélioré, conservation intelligente des champs, changement rapide d’emplacement, sauvegarde proposée en fin de séance, navigation par emplacement et favoris sur trois niveaux.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Nouveautés V1.1.2</h3><p class="small-note">Nouveau moteur de scan ZXing compatible Safari sur iPhone, cadre de visée, arrêt automatique après détection, vibration, contrôle des doublons et recherche bibliographique.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -489,6 +498,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
     <div id="seriesDialogBody"></div>
   </dialog>
 
+  <script src="https://unpkg.com/@zxing/browser@0.1.5"></script>
   <script>
 const STORAGE_KEY = "biblioperso_books_v02";
 const SNAPSHOT_KEY = "biblioperso_snapshots_v07";
@@ -555,7 +565,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"1.1",
+    version:"1.1.2",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1126,7 +1136,9 @@ function activateTab(id){
 }
 document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>activateTab(btn.dataset.tab)));
 let scanStream = null;
-let scanLoopActive = false;
+let scanControls = null;
+let scanReader = null;
+let scanHandlingResult = false;
 
 function cleanIsbn(value){
   return String(value || "").replace(/[^0-9Xx]/g,"").toUpperCase();
@@ -1144,8 +1156,7 @@ function validIsbn(isbn){
   }
   if(isbn.length === 13){
     const sum = isbn.slice(0,12).split("").reduce((acc,d,i)=>acc + Number(d)*(i%2?3:1),0);
-    const check = (10-(sum%10))%10;
-    return check === Number(isbn[12]);
+    return ((10-(sum%10))%10) === Number(isbn[12]);
   }
   return false;
 }
@@ -1192,27 +1203,31 @@ async function fetchBookMetadata(isbn){
 }
 
 async function handleScannedIsbn(rawIsbn){
+  if(scanHandlingResult) return;
+  scanHandlingResult = true;
+
   const isbn = cleanIsbn(rawIsbn);
   $("manualScanIsbn").value = isbn;
 
   if(!validIsbn(isbn)){
-    setScanStatus("ISBN non valide. Vérifie les chiffres.");
+    setScanStatus("Code détecté, mais ce n’est pas un ISBN valide.");
+    scanHandlingResult = false;
     return;
   }
+
+  if(navigator.vibrate) navigator.vibrate(120);
 
   const existing = books.find(b=>cleanIsbn(b.isbn)===isbn);
   if(existing){
     stopCamera();
     setScanStatus("Cet ouvrage est déjà enregistré.");
     openDetail(existing.id);
+    scanHandlingResult = false;
     return;
   }
 
-  setScanStatus("Recherche des informations en ligne…");
-  $("manualScanSearch").classList.add("loading");
+  setScanStatus("ISBN détecté. Recherche des informations…");
   const metadata = await fetchBookMetadata(isbn);
-  $("manualScanSearch").classList.remove("loading");
-
   stopCamera();
   openForm();
   $("isbn").value = isbn;
@@ -1223,82 +1238,90 @@ async function handleScannedIsbn(rawIsbn){
     $("publisher").value = metadata.publisher;
     $("year").value = metadata.year;
     activateTab("generalTab");
-    setScanStatus("Informations trouvées. Vérifie puis complète la fiche.");
   }else{
     activateTab("editionTab");
-    setScanStatus("ISBN reconnu, mais aucune fiche n’a été trouvée. Complète les informations manuellement.");
   }
+  scanHandlingResult = false;
 }
 
 async function startCamera(){
   if(!window.isSecureContext){
-    setScanStatus("La caméra est bloquée dans un fichier local. Elle fonctionnera lorsque BiblioPerso sera installé depuis une adresse sécurisée.");
+    setScanStatus("La caméra nécessite une adresse HTTPS.");
     return;
   }
   if(!navigator.mediaDevices?.getUserMedia){
     setScanStatus("La caméra n’est pas disponible dans ce navigateur.");
     return;
   }
-  if(!("BarcodeDetector" in window)){
-    setScanStatus("La lecture automatique des codes-barres n’est pas prise en charge ici. Utilise la saisie manuelle.");
+  if(!window.ZXingBrowser){
+    setScanStatus("Le lecteur de codes-barres n’a pas pu être chargé. Vérifie la connexion Internet puis recharge l’application.");
     return;
   }
 
+  stopCamera();
+  scanHandlingResult = false;
+
   try{
-    const formats = await BarcodeDetector.getSupportedFormats();
-    const preferred = formats.includes("ean_13") ? ["ean_13"] : formats;
-    const detector = new BarcodeDetector({formats:preferred});
-    scanStream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:"environment"}}, audio:false
+    scanReader = new ZXingBrowser.BrowserMultiFormatReader({
+      delayBetweenScanAttempts: 120,
+      delayBetweenScanSuccess: 800
     });
-    $("scanVideo").srcObject = scanStream;
-    await $("scanVideo").play();
-    $("scanVideo").classList.remove("hidden");
+
+    $("scanVideoWrap").classList.remove("hidden");
     $("scanPlaceholder").classList.add("hidden");
     $("startCameraBtn").classList.add("hidden");
     $("stopCameraBtn").classList.remove("hidden");
-    setScanStatus("Place le code-barres dans l’image.");
-    scanLoopActive = true;
+    setScanStatus("Place le code-barres ISBN horizontalement dans le cadre.");
 
-    const detect = async()=>{
-      if(!scanLoopActive) return;
-      try{
-        const codes = await detector.detect($("scanVideo"));
-        const code = codes.find(c=>["ean_13","ean_8","upc_a","upc_e"].includes(c.format)) || codes[0];
-        if(code?.rawValue){
-          scanLoopActive = false;
-          await handleScannedIsbn(code.rawValue);
-          return;
-        }
-      }catch(error){}
-      requestAnimationFrame(detect);
+    const constraints = {
+      audio:false,
+      video:{
+        facingMode:{ideal:"environment"},
+        width:{ideal:1920},
+        height:{ideal:1080}
+      }
     };
-    requestAnimationFrame(detect);
+
+    scanControls = await scanReader.decodeFromConstraints(
+      constraints,
+      $("scanVideo"),
+      async (result, error, controls)=>{
+        if(result && !scanHandlingResult){
+          const text = result.getText ? result.getText() : String(result.text || result);
+          await handleScannedIsbn(text);
+        }
+      }
+    );
   }catch(error){
-    setScanStatus("Impossible d’ouvrir la caméra. Vérifie l’autorisation donnée au navigateur.");
     stopCamera();
+    const name = error?.name || "";
+    if(name === "NotAllowedError" || name === "PermissionDeniedError"){
+      setScanStatus("Accès à la caméra refusé. Autorise la caméra dans les réglages de Safari.");
+    }else if(name === "NotFoundError"){
+      setScanStatus("Aucune caméra n’a été trouvée.");
+    }else{
+      setScanStatus("Impossible d’ouvrir la caméra. Ferme puis rouvre BiblioPerso et réessaie.");
+    }
   }
 }
 
 function stopCamera(){
-  scanLoopActive = false;
-  if(scanStream){
-    scanStream.getTracks().forEach(track=>track.stop());
-    scanStream = null;
+  try{ scanControls?.stop(); }catch(error){}
+  scanControls = null;
+  try{ scanReader?.reset(); }catch(error){}
+  scanReader = null;
+
+  const video = $("scanVideo");
+  if(video?.srcObject){
+    video.srcObject.getTracks().forEach(track=>track.stop());
+    video.srcObject = null;
   }
-  $("scanVideo").srcObject = null;
-  $("scanVideo").classList.add("hidden");
-  $("scanPlaceholder").classList.remove("hidden");
-  $("startCameraBtn").classList.remove("hidden");
-  $("stopCameraBtn").classList.add("hidden");
+
+  $("scanVideoWrap")?.classList.add("hidden");
+  $("scanPlaceholder")?.classList.remove("hidden");
+  $("startCameraBtn")?.classList.remove("hidden");
+  $("stopCameraBtn")?.classList.add("hidden");
 }
-
-
-$("dashboardBtn").addEventListener("click",()=>{
-  const hidden = $("dashboardPanel").classList.toggle("hidden");
-  $("locationPanel").classList.toggle("hidden", hidden);
-  $("dashboardBtn").textContent = hidden ? "📊 Tableau de bord" : "✕ Masquer le tableau de bord";
-});
 
 $("scanBtn").addEventListener("click",()=>{
   $("manualScanIsbn").value = "";

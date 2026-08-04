@@ -1,4 +1,4 @@
-# BiblioPerso V1.1.1 — PWA iPhone
+# BiblioPerso V1.1.2 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -81,3 +81,17 @@ Les 1 800 ouvrages ne seront pas stockés dans l’hébergement : ils resteront 
 - rétablit les écrans manquants ;
 - corrige les boutons Ajouter, Scanner et Inventaire ;
 - répare le champ de favori à trois niveaux.
+
+
+## Nouveautés V1.1.2
+- remplacement de BarcodeDetector par ZXing Browser ;
+- scan EAN/ISBN compatible Safari sur iPhone ;
+- caméra arrière avec résolution élevée ;
+- cadre de visée ;
+- arrêt automatique après reconnaissance ;
+- vibration après détection ;
+- détection des doublons ;
+- saisie manuelle toujours disponible.
+
+## Premier essai sur iPhone
+Après la mise à jour GitHub, ouvre d’abord l’adresse dans Safari et recharge la page. Ferme ensuite l’application de l’écran d’accueil et rouvre-la. Au premier scan, accepte l’accès à la caméra.
