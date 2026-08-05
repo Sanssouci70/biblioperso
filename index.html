@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 5.0.1 Cloud</title>
+  <title>BiblioPerso 5.0.2 Cloud</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -201,7 +201,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 5.0.1 · Firebase configuré</p>
+      <p class="subtitle">Version 5.0.2 · création de compte corrigée</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -637,7 +637,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
       </div>
       <div class="panel">
         <h3>État</h3>
-        <div id="cloudStatus" class="smart-note">Cloud non configuré.</div>
+        <div id="cloudStatus" class="smart-note" role="status" aria-live="polite">Cloud non configuré.</div>
         <div id="cloudUserInfo" class="small-note"></div>
       </div>
       <div class="panel">
@@ -650,17 +650,17 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
         <label>Adresse e-mail<input id="cloudEmail" type="email" autocomplete="email"></label>
         <label>Mot de passe<input id="cloudPassword" type="password" autocomplete="current-password" minlength="6"></label>
         <div class="primary-actions">
-          <button id="cloudLoginBtn" class="primary">Se connecter</button>
-          <button id="cloudRegisterBtn">Créer le compte</button>
-          <button id="cloudLogoutBtn" class="hidden">Se déconnecter</button>
+          <button type="button" id="cloudLoginBtn" class="primary" onclick="cloudLogin()">Se connecter</button>
+          <button type="button" id="cloudRegisterBtn" onclick="cloudRegister()">Créer le compte</button>
+          <button type="button" id="cloudLogoutBtn" class="hidden" onclick="cloudLogout()">Se déconnecter</button>
         </div>
       </div>
       <div class="panel">
         <h3>Données</h3>
         <p class="small-note">Si le Cloud est vide, les données locales sont envoyées automatiquement lors de la première connexion.</p>
         <div class="primary-actions">
-          <button id="cloudUploadBtn">Envoyer les données de cet appareil</button>
-          <button id="cloudDownloadBtn">Recharger depuis le Cloud</button>
+          <button type="button" id="cloudUploadBtn" onclick="cloudForceUpload()">Envoyer les données de cet appareil</button>
+          <button type="button" id="cloudDownloadBtn" onclick="cloudForceDownload()">Recharger depuis le Cloud</button>
         </div>
       </div>
     </section>
@@ -789,7 +789,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"5.0.1",
+    version:"5.0.2",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -2784,20 +2784,61 @@ async function reloadFromCloud(){
 }
 window.BiblioCloud={queueSync:queueCloudSync,isApplyingRemote:()=>cloudApplyingRemote,forceSync:()=>syncLocalToCloud(true),reload:reloadFromCloud};
 
+
+async function cloudRegister(){
+  cloudSetStatus("Création du compte…","syncing");
+  if(!cloudAuth && !(await initializeCloud())) return;
+  const email=$("cloudEmail").value.trim();
+  const password=$("cloudPassword").value;
+  if(!email){
+    cloudSetStatus("Saisis une adresse e-mail.","error");
+    $("cloudEmail").focus();
+    return;
+  }
+  if(password.length<6){
+    cloudSetStatus("Le mot de passe doit contenir au moins 6 caractères.","error");
+    $("cloudPassword").focus();
+    return;
+  }
+  try{
+    await cloudAuth.createUserWithEmailAndPassword(email,password);
+    cloudSetStatus("Compte créé. Synchronisation de la bibliothèque…","syncing");
+  }catch(e){
+    cloudSetStatus(`Création impossible : ${e.message}`,"error");
+    console.error("cloudRegister",e);
+  }
+}
+async function cloudLogin(){
+  cloudSetStatus("Connexion…","syncing");
+  if(!cloudAuth && !(await initializeCloud())) return;
+  const email=$("cloudEmail").value.trim();
+  const password=$("cloudPassword").value;
+  try{
+    await cloudAuth.signInWithEmailAndPassword(email,password);
+  }catch(e){
+    cloudSetStatus(`Connexion impossible : ${e.message}`,"error");
+    console.error("cloudLogin",e);
+  }
+}
+function cloudLogout(){
+  cloudAuth?.signOut();
+}
+async function cloudForceUpload(){
+  if(!cloudAuth?.currentUser){
+    cloudSetStatus("Connecte-toi d’abord.","error");
+    return;
+  }
+  await window.BiblioCloud.forceSync();
+}
+async function cloudForceDownload(){
+  if(!cloudAuth?.currentUser){
+    cloudSetStatus("Connecte-toi d’abord.","error");
+    return;
+  }
+  await window.BiblioCloud.reload();
+}
+
 $("cloudBtn").addEventListener("click",()=>{fillFirebaseConfigForm();showView("cloudView")});
-$("cloudRegisterBtn").addEventListener("click",async()=>{
-  if(!cloudAuth&&!(await initializeCloud()))return;
-  try{await cloudAuth.createUserWithEmailAndPassword($("cloudEmail").value.trim(),$("cloudPassword").value)}
-  catch(e){cloudSetStatus(`Création impossible : ${e.message}`,"error")}
-});
-$("cloudLoginBtn").addEventListener("click",async()=>{
-  if(!cloudAuth&&!(await initializeCloud()))return;
-  try{await cloudAuth.signInWithEmailAndPassword($("cloudEmail").value.trim(),$("cloudPassword").value)}
-  catch(e){cloudSetStatus(`Connexion impossible : ${e.message}`,"error")}
-});
-$("cloudLogoutBtn").addEventListener("click",()=>cloudAuth?.signOut());
-$("cloudUploadBtn").addEventListener("click",()=>window.BiblioCloud.forceSync());
-$("cloudDownloadBtn").addEventListener("click",()=>window.BiblioCloud.reload());
 initializeCloud();
 
 
