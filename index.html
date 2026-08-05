@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 3.1.2</title>
+  <title>BiblioPerso 3.1.3</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -170,7 +170,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 3.1.2 · modification et inventaire corrigés</p>
+      <p class="subtitle">Version 3.1.3 · listes harmonisées</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -683,7 +683,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"3.1.2",
+    version:"3.1.3",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1137,7 +1137,7 @@ function worklistItems(){
 function renderWorklist(){
   const box=$("worklistResults");
   if(!box) return;
-  const items=worklistItems().sort((a,b)=>String(a.title||"").localeCompare(String(b.title||""),"fr"));
+  const items=worklistItems().sort(compareBooksForDisplay);
   if(!items.length){
     box.className="results empty";
     box.textContent="Aucun ouvrage à compléter.";
@@ -1154,7 +1154,7 @@ function renderWorklist(){
     const btn=document.createElement("button");
     btn.className="result-item";
     btn.innerHTML=`<strong>${escapeHtml(b.title || "Sans titre")}</strong>
-      <div class="meta">${escapeHtml(b.author || "Auteur manquant")}</div>
+      <div class="meta">${escapeHtml(displayAuthorName(b.author))}</div>
       <span class="badge wish">${escapeHtml(missing.join(" · "))}</span>`;
     btn.addEventListener("click",()=>openDetail(b.id,"resultsView"));
     box.appendChild(btn);
@@ -1204,7 +1204,7 @@ function render() {
   });
 
 
-  filtered.sort((a,b)=>a.title.localeCompare(b.title,"fr"));
+  filtered.sort(compareBooksForDisplay);
   renderSeries();
   refreshSuggestions();
   renderMissing();
@@ -1310,6 +1310,42 @@ function resetSearchFilters(){
   document.querySelectorAll(".stat-card").forEach(x=>x.classList.remove("active"));
 }
 
+function displayAuthorName(author){
+  let value=String(author||"").trim();
+  if(!value) return "Auteur manquant";
+
+  // Supprime les précisions de catalogue : dates, rôle, ponctuation finale.
+  value=value
+    .replace(/\s*\([^)]*\)\s*/g," ")
+    .replace(/\s*[.,;:]\s*(?:auteur(?: du texte)?|illustrateur|traducteur|scénariste|dessinateur).*$/i,"")
+    .replace(/\s+/g," ")
+    .trim();
+
+  // Convertit « Martin, Jacques » en « Jacques Martin ».
+  const comma=value.match(/^([^,]+),\s*(.+)$/);
+  if(comma){
+    value=`${comma[2].trim()} ${comma[1].trim()}`;
+  }
+
+  return value || "Auteur manquant";
+}
+
+function compareBooksForDisplay(a,b){
+  const ua=normalize(universeOf(a));
+  const ub=normalize(universeOf(b));
+  if(ua!==ub) return ua.localeCompare(ub,"fr",{numeric:true});
+
+  const va=parseFloat(String(a.volume||"").replace(",","."));
+  const vb=parseFloat(String(b.volume||"").replace(",","."));
+  const aHas=Number.isFinite(va);
+  const bHas=Number.isFinite(vb);
+
+  if(aHas && bHas && va!==vb) return va-vb;
+  if(aHas!==bHas) return aHas ? -1 : 1;
+
+  return String(a.title||"").localeCompare(String(b.title||""),"fr",{numeric:true});
+}
+
 function filteredBooksForSearch(){
   const q=normalize($("searchInput")?.value || "");
   return books.filter(b=>{
@@ -1334,7 +1370,7 @@ function renderResultsPage(){
     const btn=document.createElement("button");
     btn.className="result-item";
     btn.innerHTML=`<strong>${escapeHtml(b.title || "Titre à compléter")}${Number(b.favoriteLevel||0)>0 ? `<span class="favorite-mark">${"★".repeat(Number(b.favoriteLevel||1))}</span>` : ""}</strong>
-      <div class="meta">${escapeHtml(b.author || "Auteur manquant")}${universeOf(b) ? " · "+escapeHtml(universeOf(b)) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
+      <div class="meta">${escapeHtml(displayAuthorName(b.author))}${universeOf(b) ? " · "+escapeHtml(universeOf(b)) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
       <div class="meta">${categoryLabel(b.category)} · ${escapeHtml(b.format)}${locationOf(b) ? " · 📍 "+escapeHtml(locationOf(b)) : ""}</div>
       <span class="badge ${b.status}">${statusLabel(b.status)}</span>`;
     btn.addEventListener("click",()=>openDetail(b.id,"resultsView"));
