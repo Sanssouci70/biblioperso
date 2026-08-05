@@ -1,4 +1,4 @@
-# BiblioPerso V1.3.1 — PWA iPhone
+# BiblioPerso 3.0 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -150,3 +150,35 @@ Après la mise à jour GitHub, ouvre d’abord l’adresse dans Safari et rechar
 
 ## Conseil sur iPhone
 Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux vidéo sur les petits codes EAN. Prendre la photo de près, nette, avec tout le code visible.
+
+
+## V2.0
+- Google Books + Open Library + BnF
+- fusion des champs
+- nettoyage titres BD
+- séparation univers / tome / titre
+
+
+## Ajustement V2.0.1
+- accueil limité à quatre actions : Scanner, Ajouter manuellement, Rechercher et Inventaire ;
+- recherche masquée jusqu’à l’appui sur le bouton ;
+- fonctions secondaires regroupées dans le menu ☰.
+
+
+## Nouveautés V2.0.2
+- bouton « Rechercher » ouvrant une page dédiée ;
+- barre de recherche et filtres en haut de cette page ;
+- résultats affichés uniquement dans la page de recherche ;
+- les compteurs BD/Romans/Autres ouvrent la recherche filtrée ;
+- « À acheter » et les emplacements utilisent aussi cette page.
+
+
+## Nouveautés 3.0
+- accueil limité aux quatre actions principales ;
+- une action ou une demande ouvre une page dédiée ;
+- en-têtes et boutons Retour harmonisés ;
+- fiche ouvrage présentée en sections Bibliographie / Ma bibliothèque ;
+- barre d’actions fixe sur les formulaires ;
+- menu regroupé par usage ;
+- nouvelle liste « Ouvrages à compléter » ;
+- affichage plein écran des fiches sur iPhone.
