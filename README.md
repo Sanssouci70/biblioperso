@@ -1,4 +1,4 @@
-# BiblioPerso 3.1.3 — PWA iPhone
+# BiblioPerso 3.1.4 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -223,3 +223,11 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - conversion de « Martin, Jacques » en « Jacques Martin » ;
 - classement des ouvrages par univers, puis par numéro de tome, puis par titre ;
 - le tome 2 apparaît donc avant le tome 3.
+
+
+## Nouveautés 3.1.4
+- balayage vers la gauche : Général → Édition → Bibliothèque ;
+- balayage vers la droite : retour à la rubrique précédente ;
+- indicateur « 1 / 3 », « 2 / 3 », « 3 / 3 » ;
+- les boutons d’onglets restent utilisables ;
+- les informations déjà saisies restent intactes.
