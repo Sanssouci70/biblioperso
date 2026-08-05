@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 3.1</title>
+  <title>BiblioPerso 3.1.1</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -170,7 +170,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 3.1 · résultats sur une page</p>
+      <p class="subtitle">Version 3.1.1 · filtres corrigés</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -681,7 +681,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"3.1",
+    version:"3.1.1",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1297,6 +1297,12 @@ function getFormData(){
   };
 }
 
+function resetSearchFilters(){
+  $("searchInput").value="";
+  ["filterCategory","filterStatus","filterFormat","filterRead","filterFavorite","filterLocation"].forEach(id=>{if($(id))$(id).value="";});
+  document.querySelectorAll(".stat-card").forEach(x=>x.classList.remove("active"));
+}
+
 function filteredBooksForSearch(){
   const q=normalize($("searchInput")?.value || "");
   return books.filter(b=>{
@@ -1653,7 +1659,7 @@ $("scanBtn").addEventListener("click",()=>{
   showView("scanView");
 });
 
-function applyMetadataToForm(m){const c=cleanBibliographicTitle(m.title,m.subtitle);$("title").value=c.title||m.title||"";$("subtitle").value=c.subtitle||m.subtitle||"";$("author").value=m.author||"";$("contributors").value=m.contributors||"";$("publisher").value=m.publisher||"";$("collection").value=m.collection||"";$("year").value=m.year||"";$("pages").value=m.pages||"";$("language").value=m.language||"";if(c.universe&&!$("universe").value)$("universe").value=c.universe;if(c.volume&&!$("volume").value)$("volume").value=c.volume;showSmartSuggestion({...m,title:$("title").value,author:$("author").value});renderSourceStatus(m)}
+function applyMetadataToForm(m){const c=cleanBibliographicTitle(m.title,m.subtitle);$("title").value=c.title||"";$("subtitle").value=c.subtitle||"";$("author").value=m.author||"";$("contributors").value=m.contributors||"";$("publisher").value=m.publisher||"";$("collection").value=m.collection||"";$("year").value=m.year||"";$("pages").value=m.pages||"";$("language").value=m.language||"";if(c.universe&&!$("universe").value)$("universe").value=c.universe;if(c.volume&&!$("volume").value)$("volume").value=c.volume;$("needsCompletion").checked=!$("title").value.trim();showSmartSuggestion({...m,title:$("title").value,author:$("author").value});renderSourceStatus(m)}
 
 async function processDetectedIsbn(rawValue){
   if(scanHandlingResult) return;
@@ -1914,7 +1920,7 @@ $("filtersBtn").addEventListener("click",()=>{
   $(id).addEventListener(id==="filterLocation"?"input":"change",render);
 });
 $("clearFiltersBtn").addEventListener("click",()=>{
-  ["filterCategory","filterStatus","filterFormat","filterRead","filterFavorite","filterLocation"].forEach(id=>$(id).value="");
+  resetSearchFilters();
   render();
 });
 $("worklistBtn").addEventListener("click",()=>{renderWorklist();showView("worklistView");});
@@ -1924,6 +1930,7 @@ $("consistencyBtn").addEventListener("click",()=>{
 });
 
 $("searchBtn").addEventListener("click",()=>{
+  resetSearchFilters();
   showView("searchView");
   setTimeout(()=>$("searchInput").focus(),50);
 });
@@ -1947,22 +1954,17 @@ $("inventoryBtn").addEventListener("click",()=>showView("inventoryView"));
 $("locationsBtn").addEventListener("click",()=>{renderLocations();showView("locationsView");});
 $("locationsSearchInput").addEventListener("input",renderLocations);
 $("wishlistBtn").addEventListener("click",()=>{
-  showView("searchView");
-  $("searchInput").value="";
-  ["filterCategory","filterFormat","filterRead","filterFavorite","filterLocation"].forEach(id=>$(id).value="");
+  resetSearchFilters();
   $("filterStatus").value="buy";
-  document.querySelectorAll(".stat-card").forEach(x=>x.classList.remove("active"));
   renderResultsPage();
   showView("resultsView");
 });
 
 $("locationSearchBtn").addEventListener("click",()=>{
-  const loc = $("locationSearchInput").value.trim().toUpperCase().replace(/\s+/g,"");
+  const loc=$("locationSearchInput").value.trim().toUpperCase().replace(/\s+/g,"");
   if(!loc){alert("Indique un emplacement, par exemple D4.");return;}
-  showView("searchView");
-  $("searchInput").value="";
+  resetSearchFilters();
   $("filterLocation").value=loc;
-  document.querySelectorAll(".stat-card").forEach(x=>x.classList.remove("active"));
   renderResultsPage();
   showView("resultsView");
 });
@@ -1977,10 +1979,9 @@ document.querySelectorAll("[data-back]").forEach(b=>b.addEventListener("click",(
 }));
 document.querySelectorAll(".stat-card").forEach(btn=>btn.addEventListener("click",()=>{
   const category=btn.dataset.filter;
-  document.querySelectorAll(".stat-card").forEach(x=>x.classList.remove("active"));
-  btn.classList.add("active");
+  resetSearchFilters();
   $("filterCategory").value=category;
-  showView("searchView");
+  btn.classList.add("active");
   renderResultsPage();
   showView("resultsView");
 }));

@@ -1,4 +1,4 @@
-# BiblioPerso 3.1 — PWA iPhone
+# BiblioPerso 3.1.1 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -199,3 +199,11 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - fiche ouvrage sur une vraie page, sans fenêtre ;
 - navigation Retour : Fiche → Résultats → Recherche → Accueil ;
 - actions Modifier, Dupliquer et Supprimer en bas de la fiche.
+
+
+## Correctif 3.1.1
+- remise à zéro automatique du texte recherché et de tous les filtres ;
+- les listes BD, Romans et Autres affichent toujours toute la catégorie demandée ;
+- même correction pour À acheter et les emplacements ;
+- après recherche ISBN, le champ Titre contient uniquement le véritable titre ;
+- un libellé comme « Alix, tome 17 » devient Univers = Alix, Tome = 17 et Titre à compléter.
