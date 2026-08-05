@@ -1,4 +1,4 @@
-# BiblioPerso 3.1.1 — PWA iPhone
+# BiblioPerso 3.1.2 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -207,3 +207,11 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - même correction pour À acheter et les emplacements ;
 - après recherche ISBN, le champ Titre contient uniquement le véritable titre ;
 - un libellé comme « Alix, tome 17 » devient Univers = Alix, Tome = 17 et Titre à compléter.
+
+
+## Correctif 3.1.2
+- le bouton « Modifier » ouvre désormais la fiche avec toutes les données déjà enregistrées ;
+- le mode Inventaire propose « Scanner l’ISBN suivant » comme action principale ;
+- l’ajout manuel reste disponible ;
+- l’emplacement choisi pour la séance d’inventaire est automatiquement repris après le scan ;
+- après enregistrement, retour à la séance avec le compteur mis à jour.

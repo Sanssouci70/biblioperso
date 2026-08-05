@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 3.1.1</title>
+  <title>BiblioPerso 3.1.2</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -170,7 +170,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 3.1.1 · filtres corrigés</p>
+      <p class="subtitle">Version 3.1.2 · modification et inventaire corrigés</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -435,7 +435,8 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
         <h3 id="inventoryTitle">Étagère</h3>
         <p><strong id="inventoryCount">0</strong> ouvrage(s) ajouté(s) pendant cette session.</p>
         <div class="primary-actions">
-          <button id="inventoryAdd" class="primary">＋ Ajouter le prochain ouvrage</button>
+          <button id="inventoryScan" class="primary">📷 Scanner l’ISBN suivant</button>
+          <button id="inventoryAdd">＋ Ajouter manuellement</button>
           <button id="changeInventoryLocation">➡ Changer d’emplacement</button>
           <button id="finishInventory">✓ Terminer la séance</button>
         </div>
@@ -518,6 +519,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
         <h2>Scanner un ISBN</h2>
       </div>
 
+      <div id="inventoryScanBanner" class="inventory-banner hidden"></div>
       <div class="panel">
         <p><strong>Place le code-barres horizontalement dans le cadre.</strong></p>
         <div id="html5Reader" class="html5-reader"></div>
@@ -681,7 +683,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"3.1.1",
+    version:"3.1.2",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1231,6 +1233,11 @@ function render() {
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 
 function openForm(book=null) {
+  // Les boutons de la fiche transmettent l’identifiant de l’ouvrage.
+  // On le transforme ici en véritable fiche avant de remplir le formulaire.
+  if(typeof book === "string"){
+    book = books.find(b=>b.id===book) || null;
+  }
   $("bookForm").reset();
   $("metadataStatus").className="metadata-status hidden";
   $("metadataStatus").textContent=""; $("metadataSources").className="metadata-sources hidden"; $("metadataSources").innerHTML="";
@@ -1654,6 +1661,7 @@ function stopCamera(){
 }
 
 $("scanBtn").addEventListener("click",()=>{
+  $("inventoryScanBanner")?.classList.add("hidden");
   $("manualScanIsbn").value = "";
   setScanStatus("Prêt.");
   showView("scanView");
@@ -2046,6 +2054,13 @@ $("startInventory").addEventListener("click",()=>{
   $("inventoryCount").textContent="0";
   $("inventorySetup").classList.add("hidden");
   $("inventorySession").classList.remove("hidden");
+});
+$("inventoryScan").addEventListener("click",()=>{
+  $("inventoryScanBanner").classList.remove("hidden");
+  $("inventoryScanBanner").textContent=`Mode inventaire · emplacement ${inventoryLocation?.location || ""}`;
+  $("scanStatus").className="metadata-status hidden";
+  showView("scanView");
+  // L’utilisateur garde la maîtrise : il touche ensuite « Ouvrir la caméra ».
 });
 $("inventoryAdd").addEventListener("click",()=>openForm());
 $("changeInventoryLocation").addEventListener("click",()=>{
