@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 3.1.5</title>
+  <title>BiblioPerso 3.1.6</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -181,7 +181,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 3.1.5 · ordre des tomes corrigé</p>
+      <p class="subtitle">Version 3.1.6 · inventaire enchaîné</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -449,6 +449,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
       <div id="inventorySession" class="panel hidden">
         <h3 id="inventoryTitle">Étagère</h3>
         <p><strong id="inventoryCount">0</strong> ouvrage(s) ajouté(s) pendant cette session.</p>
+        <p class="small-note">Après le premier accord d’accès à la caméra, le bouton « Scanner l’ISBN suivant » ouvre directement le lecteur.</p>
         <div class="primary-actions">
           <button id="inventoryScan" class="primary">📷 Scanner l’ISBN suivant</button>
           <button id="inventoryAdd">＋ Ajouter manuellement</button>
@@ -698,7 +699,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"3.1.5",
+    version:"3.1.6",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1509,6 +1510,7 @@ let scanReader = null;
 let scanHandlingResult = false;
 let html5Scanner = null;
 let html5Scanning = false;
+let inventoryAutoScan = false;
 
 function cleanIsbn(value){
   return String(value || "").replace(/[^0-9Xx]/g,"").toUpperCase();
@@ -1777,6 +1779,8 @@ function stopCamera(){
 }
 
 $("scanBtn").addEventListener("click",()=>{
+  inventoryAutoScan=false;
+  $("startHtml5ScanBtn").classList.remove("hidden");
   $("inventoryScanBanner")?.classList.add("hidden");
   $("manualScanIsbn").value = "";
   setScanStatus("Prêt.");
@@ -1895,7 +1899,11 @@ async function stopHtml5Scan(){
     try{ await html5Scanner.stop(); }catch(error){}
   }
   html5Scanning = false;
-  $("startHtml5ScanBtn")?.classList.remove("hidden");
+  if(inventoryAutoScan){
+    $("startHtml5ScanBtn")?.classList.add("hidden");
+  }else{
+    $("startHtml5ScanBtn")?.classList.remove("hidden");
+  }
   $("stopHtml5ScanBtn")?.classList.add("hidden");
 }
 
@@ -2146,6 +2154,9 @@ $("bookForm").addEventListener("submit",e=>{
   save(false);
   if(inventoryLocation){
     $("inventoryCount").textContent = books.filter(b=>locationOf(b)===inventoryLocation.location).length - inventoryStartCount;
+    inventoryAutoScan=false;
+    $("inventoryScanBanner")?.classList.add("hidden");
+    $("startHtml5ScanBtn")?.classList.remove("hidden");
     showView("inventoryView");
   } else showView("homeView");
 });
@@ -2171,12 +2182,16 @@ $("startInventory").addEventListener("click",()=>{
   $("inventorySetup").classList.add("hidden");
   $("inventorySession").classList.remove("hidden");
 });
-$("inventoryScan").addEventListener("click",()=>{
+$("inventoryScan").addEventListener("click",async()=>{
+  inventoryAutoScan=true;
   $("inventoryScanBanner").classList.remove("hidden");
   $("inventoryScanBanner").textContent=`Mode inventaire · emplacement ${inventoryLocation?.location || ""}`;
-  $("scanStatus").className="metadata-status hidden";
+  $("scanStatus").className="metadata-status";
+  $("scanStatus").textContent="Ouverture automatique de la caméra…";
+  $("startHtml5ScanBtn").classList.add("hidden");
   showView("scanView");
-  // L’utilisateur garde la maîtrise : il touche ensuite « Ouvrir la caméra ».
+  await new Promise(resolve=>setTimeout(resolve,120));
+  await startHtml5Scan();
 });
 $("inventoryAdd").addEventListener("click",()=>openForm());
 $("changeInventoryLocation").addEventListener("click",()=>{
@@ -2197,6 +2212,8 @@ $("finishInventory").addEventListener("click",()=>{
   inventoryLocation=null;
   inventoryTemplate=null;
   inventoryAddedIds=[];
+  inventoryAutoScan=false;
+  $("startHtml5ScanBtn")?.classList.remove("hidden");
   $("inventorySession").classList.add("hidden");
   $("inventorySetup").classList.remove("hidden");
   showView("homeView");

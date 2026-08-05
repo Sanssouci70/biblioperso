@@ -1,4 +1,4 @@
-# BiblioPerso 3.1.5 — PWA iPhone
+# BiblioPerso 3.1.6 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -238,3 +238,11 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - correction du tri utilisé par la page Résultats ;
 - les numéros de tome enregistrés comme texte sont reconnus ;
 - pour Alix, l’ordre attendu est désormais tome 1, 2, 3, 4, 5, 6, 7.
+
+
+## Nouveautés 3.1.6
+- en mode Inventaire, « Scanner l’ISBN suivant » lance directement la caméra ;
+- plus besoin de toucher ensuite « Ouvrir la caméra » ;
+- la demande d’autorisation iPhone reste gérée par Safari et ne devrait apparaître que la première fois ;
+- après validation de la fiche, retour automatique à la séance d’inventaire ;
+- le livre suivant se lance à nouveau avec un seul toucher sur « Scanner l’ISBN suivant ».
