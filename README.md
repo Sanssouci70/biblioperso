@@ -1,4 +1,4 @@
-# BiblioPerso 4.0 — PWA iPhone
+# BiblioPerso 4.0.1 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -263,3 +263,12 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - analyse automatique des numéros absents ;
 - création automatique des fiches manquantes ;
 - option d’ajout direct à « À acheter ».
+
+
+## Correctif 4.0.1
+- suppression de l’ancienne page « Ce qui me manque » ;
+- toute la gestion des manquants se fait désormais dans « Collections » ;
+- aucun univers à saisir : on ouvre directement Alix, Astérix, Thorgal, etc. ;
+- dans une collection, on indique seulement le dernier tome existant ;
+- BiblioPerso détecte les numéros absents et propose de créer leurs fiches ;
+- option pour les ajouter immédiatement à « À acheter ».

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 4.0</title>
+  <title>BiblioPerso 4.0.1</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -194,7 +194,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 4.0 · gestionnaire de collections</p>
+      <p class="subtitle">Version 4.0.1 · manquants dans Collections</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -525,12 +525,13 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
         <button class="back-btn" data-back>←</button>
         <h2>Collections</h2>
       </div>
-      <p class="page-intro">Suivi des univers, progression, tomes possédés et tomes manquants.</p>
+      <p class="page-intro">Choisis une collection pour voir les tomes possédés, détecter les trous et créer les fiches manquantes.</p>
       <label class="search-box">
         <span>🔎</span>
         <input id="collectionsSearchInput" type="search" placeholder="Rechercher une collection" autocomplete="off">
       </label>
       <div id="collectionsResults" class="results empty">Aucune collection enregistrée.</div>
+      <button id="collectionsBuyBtn">🛒 Voir la liste « À acheter »</button>
     </section>
 
     <section id="collectionDetailView" class="view">
@@ -540,7 +541,8 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
       </div>
       <div id="collectionProgressPanel" class="panel"></div>
       <div id="collectionAnalysisPanel" class="panel">
-        <h3>Analyser ma collection</h3>
+        <h3>Détecter les tomes manquants</h3>
+        <p class="small-note">L’univers est déjà sélectionné : aucune saisie supplémentaire n’est nécessaire.</p>
         <label>Dernier tome existant
           <input id="collectionMaxVolume" type="number" min="1" inputmode="numeric" placeholder="Ex. 43">
         </label>
@@ -548,36 +550,10 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
           <input id="collectionAddToBuy" type="checkbox">
           Ajouter les tomes créés à « À acheter »
         </label>
-        <button id="analyzeCollectionBtn" class="primary">Détecter les manquants</button>
+        <button id="analyzeCollectionBtn" class="primary">Détecter les tomes manquants</button>
         <div id="collectionAnalysisResult" class="smart-note hidden"></div>
       </div>
       <div id="collectionVolumes" class="results empty">Aucun tome.</div>
-    </section>
-
-    <section id="missingView" class="view">
-      <div class="view-title">
-        <button class="back-btn" data-back>←</button>
-        <h2>Ce qui me manque</h2>
-      </div>
-      <label class="search-box">
-        <span>🔎</span>
-        <input id="missingSearchInput" type="search" placeholder="Filtrer par univers ou cycle" autocomplete="off">
-      </label>
-      <div class="panel">
-        <h3>Créer les tomes manquants</h3>
-        <p class="small-note">Choisis un univers, puis indique le dernier tome existant. Seuls les numéros absents seront créés.</p>
-        <label>Univers<select id="missingUniverseSelect"></select></label>
-        <label>Cycle<select id="missingCycleSelect"></select></label>
-        <label>Dernier tome existant
-          <input id="missingMaxVolume" type="number" min="1" inputmode="numeric" placeholder="Ex. 40">
-        </label>
-        <label class="check-label">
-          <input id="missingAlsoBuy" type="checkbox">
-          Ajouter aussi à la liste « À acheter »
-        </label>
-        <button id="createMissingBtn" class="primary">Créer les tomes manquants</button>
-      </div>
-      <div id="missingResults" class="results empty">Aucun tome manquant détecté.</div>
     </section>
 
     <section id="installView" class="view">
@@ -656,7 +632,6 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
         <button id="wishlistBtn">🛒 À acheter</button>
         <button id="seriesBtn">📚 Univers et cycles</button>
         <button id="collectionsBtn">⭐ Collections</button>
-        <button id="missingBtn">📋 Ce qui me manque</button>
         <button id="upcomingBtn">📅 Sorties à venir</button>
         </div><h3>Données et sécurité</h3><div class="primary-actions"><button id="quickBackupBtn">💾 Sauvegarder ma bibliothèque</button>
         <button id="installHelpBtn">📱 Installer sur iPhone</button>
@@ -767,7 +742,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"4.0",
+    version:"4.0.1",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1251,7 +1226,7 @@ function renderMissing(){
       el.innerHTML=`<strong>${escapeHtml(b.title||`Tome ${b.volume}`)}</strong>
         <div class="meta">${escapeHtml(displayAuthorName(b.author))} · ${escapeHtml(c.universe)}${b.volume?" · tome "+escapeHtml(b.volume):""}</div>
         <span class="badge ${b.status}">${b.status==="buy"?"À acheter":"Manquant"}</span>`;
-      el.addEventListener("click",()=>openDetail(b.id,"missingView"));
+      el.addEventListener("click",()=>openDetail(b.id,"collectionsView"));
       box.appendChild(el);
       return;
     }
@@ -2398,15 +2373,12 @@ $("searchInput").addEventListener("input",render);
 $("seriesBtn").addEventListener("click",()=>{renderSeries();showView("seriesView");});
 $("collectionsBtn").addEventListener("click",()=>{renderCollections();showView("collectionsView");});
 $("collectionsSearchInput").addEventListener("input",renderCollections);
+$("collectionsBuyBtn").addEventListener("click",()=>$("wishlistBtn").click());
 $("collectionBackBtn").addEventListener("click",()=>{renderCollections();showView("collectionsView");});
 $("analyzeCollectionBtn").addEventListener("click",analyzeCurrentCollection);
 $("collectionMaxVolume").addEventListener("input",renderCollectionDetail);
-$("missingBtn").addEventListener("click",()=>{renderMissing();showView("missingView");});
 $("upcomingBtn").addEventListener("click",()=>{renderUpcoming();showView("upcomingView");});
 $("seriesSearchInput").addEventListener("input",renderSeries);
-$("missingSearchInput").addEventListener("input",renderMissing);
-$("missingUniverseSelect").addEventListener("change",refreshMissingSelectors);
-$("createMissingBtn").addEventListener("click",createMissingVolumes);
 $("upcomingSearchInput").addEventListener("input",renderUpcoming);
 $("universe").addEventListener("input",refreshSuggestions);
 $("closeSeriesDialog").addEventListener("click",()=>$("seriesDialog").close());
