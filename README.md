@@ -1,4 +1,4 @@
-# BiblioPerso 3.0 — PWA iPhone
+# BiblioPerso 3.1 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -182,3 +182,20 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - menu regroupé par usage ;
 - nouvelle liste « Ouvrages à compléter » ;
 - affichage plein écran des fiches sur iPhone.
+
+
+## Correctif 3.0.1
+- le champ « Titre » devient « Titre de l’ouvrage » ;
+- le champ « Tome » devient « Numéro du tome » ;
+- « Alix, tome 17 » est automatiquement séparé en Univers = Alix et Tome = 17 ;
+- lorsqu’une base ne fournit pas le vrai titre, la fiche affiche « Titre à compléter » au lieu d’utiliser le numéro du tome comme titre ;
+- les fiches déjà enregistrées sous cette forme sont signalées dans « Ouvrages à compléter ».
+
+
+## Nouveautés 3.1
+- page Recherche distincte ;
+- bouton « Afficher les résultats » ;
+- page Résultats distincte ;
+- fiche ouvrage sur une vraie page, sans fenêtre ;
+- navigation Retour : Fiche → Résultats → Recherche → Accueil ;
+- actions Modifier, Dupliquer et Supprimer en bas de la fiche.
