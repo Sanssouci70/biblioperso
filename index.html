@@ -4,11 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 4.1</title>
+  <title>BiblioPerso 5.0.1 Cloud</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
-h1,h2,h3,p{margin-top:0}.app-header h1{font-size:1.35rem;margin-bottom:2px}.subtitle,.small-note{color:#6f675e;font-size:.9rem;margin:0}
+h1,h2,h3,p{margin-top:0}
+.header-actions{display:flex;align-items:center;gap:8px}
+.cloud-badge{font-size:.75rem;padding:5px 8px;border-radius:999px;background:#e8e1d8;color:#5f584f}
+.cloud-badge.online{background:#e4f3e5;color:#315c36}
+.cloud-badge.syncing{background:#fff3cf;color:#725b14}
+.cloud-badge.error{background:#fde8e8;color:#7a2f2f}
+
+.app-header h1{font-size:1.35rem;margin-bottom:2px}.subtitle,.small-note{color:#6f675e;font-size:.9rem;margin:0}
 main{max-width:760px;margin:auto;padding:18px 16px calc(32px + env(safe-area-inset-bottom))}
 .view{display:none}.view.active{display:block}
 .search-page-note{margin-top:10px}
@@ -194,7 +201,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 4.1 · données de collection séparées</p>
+      <p class="subtitle">Version 5.0.1 · Firebase configuré</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -622,6 +629,42 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
       <div id="seriesResults" class="results empty">Aucun univers enregistré.</div>
     </section>
 
+
+    <section id="cloudView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Synchronisation Cloud</h2>
+      </div>
+      <div class="panel">
+        <h3>État</h3>
+        <div id="cloudStatus" class="smart-note">Cloud non configuré.</div>
+        <div id="cloudUserInfo" class="small-note"></div>
+      </div>
+      <div class="panel">
+        <h3>Projet Firebase</h3>
+        <p class="small-note">Projet connecté : <strong>biblioperso-3ffe9</strong></p>
+      </div>
+      <div class="panel">
+        <h3>Compte de synchronisation</h3>
+        <p class="small-note">Crée le compte une seule fois sur le PC, puis utilise exactement la même adresse e-mail et le même mot de passe sur l’iPhone.</p>
+        <label>Adresse e-mail<input id="cloudEmail" type="email" autocomplete="email"></label>
+        <label>Mot de passe<input id="cloudPassword" type="password" autocomplete="current-password" minlength="6"></label>
+        <div class="primary-actions">
+          <button id="cloudLoginBtn" class="primary">Se connecter</button>
+          <button id="cloudRegisterBtn">Créer le compte</button>
+          <button id="cloudLogoutBtn" class="hidden">Se déconnecter</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Données</h3>
+        <p class="small-note">Si le Cloud est vide, les données locales sont envoyées automatiquement lors de la première connexion.</p>
+        <div class="primary-actions">
+          <button id="cloudUploadBtn">Envoyer les données de cet appareil</button>
+          <button id="cloudDownloadBtn">Recharger depuis le Cloud</button>
+        </div>
+      </div>
+    </section>
+
     <section id="menuView" class="view">
       <div class="view-title">
         <button class="back-btn" data-back>←</button>
@@ -635,7 +678,8 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
         <button id="seriesBtn">📚 Univers et cycles</button>
         <button id="collectionsBtn">⭐ Collections</button>
         <button id="upcomingBtn">📅 Sorties à venir</button>
-        </div><h3>Données et sécurité</h3><div class="primary-actions"><button id="quickBackupBtn">💾 Sauvegarder ma bibliothèque</button>
+        </div><h3>Données et sécurité</h3><div class="primary-actions"><button id="cloudBtn">☁️ Synchronisation PC / iPhone</button>
+        <button id="quickBackupBtn">💾 Sauvegarder ma bibliothèque</button>
         <button id="installHelpBtn">📱 Installer sur iPhone</button>
         <button id="consistencyBtn">🧭 Contrôle de cohérence</button>
         <button id="worklistBtn">📝 Ouvrages à compléter</button>
@@ -745,7 +789,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"4.1",
+    version:"5.0.1",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -765,6 +809,9 @@ function save(createSnapshot=true) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
   render();
   renderSnapshots();
+  if(window.BiblioCloud && !window.BiblioCloud.isApplyingRemote()){
+    window.BiblioCloud.queueSync();
+  }
 }
 function showView(id) {
   if(id !== "scanView"){ if(typeof stopCamera === "function") stopCamera(); if(typeof stopHtml5Scan === "function") stopHtml5Scan(); }
@@ -2609,6 +2656,149 @@ $("demoBtn").addEventListener("click",()=>{
     {id:crypto.randomUUID(),category:"Roman",title:"Le Seigneur des Anneaux — Intégrale",author:"J. R. R. Tolkien",series:"Le Seigneur des Anneaux",volume:"",format:"Intégrale",containsVolumes:"1-3",collection:"",isbn:"",publisher:"",year:"",column:"G",shelf:"2",status:"owned",read:false,notes:""}
   ); makeSnapshot("Avant ajout des données de démonstration"); save(false); showView("homeView");
 });
+
+
+
+const FIREBASE_CONFIG_KEY="biblioperso_firebase_config";
+const EMBEDDED_FIREBASE_CONFIG={"apiKey": "AIzaSyBrQMY4CmYmjMeRKRkFDW970lNqV-3d5D8", "authDomain": "biblioperso-3ffe9.firebaseapp.com", "projectId": "biblioperso-3ffe9", "storageBucket": "biblioperso-3ffe9.firebasestorage.app", "messagingSenderId": "561169902784", "appId": "1:561169902784:web:38350b679e96ffd2d05125"};
+let cloudFirebaseApp=null,cloudAuth=null,cloudDb=null;
+let cloudUnsubscribeBooks=null,cloudUnsubscribeMeta=null;
+let cloudApplyingRemote=false,cloudUploading=false,cloudSyncTimer=null;
+let cloudCache=new Map(),cloudLatestTotals={};
+
+function cloudSetStatus(message,kind=""){
+  if($("cloudStatus")) $("cloudStatus").textContent=message;
+  if($("cloudBadge")){
+    $("cloudBadge").className=`cloud-badge ${kind}`;
+    $("cloudBadge").textContent=kind==="online"?"Synchronisé":kind==="syncing"?"Synchronisation…":kind==="error"?"Erreur":"Local";
+  }
+}
+function loadFirebaseConfig(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(FIREBASE_CONFIG_KEY)||"null");
+    return saved || EMBEDDED_FIREBASE_CONFIG;
+  }catch{
+    return EMBEDDED_FIREBASE_CONFIG;
+  }
+}
+function firebaseConfigComplete(c){return !!(c?.apiKey&&c?.authDomain&&c?.projectId&&c?.appId)}
+function fillFirebaseConfigForm(){
+  // Le projet Firebase est déjà intégré à cette version.
+}
+function currentFirebaseConfigFromForm(){return EMBEDDED_FIREBASE_CONFIG}
+function cloudBookHash(book){return JSON.stringify(book,Object.keys(book).sort())}
+function cloudBooksRef(uid){return cloudDb.collection("users").doc(uid).collection("books")}
+function cloudMetaRef(uid){return cloudDb.collection("users").doc(uid).collection("meta").doc("library")}
+
+async function initializeCloud(){
+  const config=loadFirebaseConfig(); fillFirebaseConfigForm();
+  if(!firebaseConfigComplete(config)){cloudSetStatus("Cloud non configuré.");return false}
+  if(typeof firebase==="undefined"){cloudSetStatus("Firebase n’a pas été chargé.","error");return false}
+  try{
+    if(!cloudFirebaseApp){
+      cloudFirebaseApp=firebase.apps.length?firebase.app():firebase.initializeApp(config);
+      cloudAuth=firebase.auth(); cloudDb=firebase.firestore();
+      cloudAuth.onAuthStateChanged(handleCloudAuthState);
+    }
+    cloudSetStatus("Configuration chargée. Connecte-toi.");
+    return true;
+  }catch(e){cloudSetStatus(`Configuration incorrecte : ${e.message}`,"error");return false}
+}
+async function handleCloudAuthState(user){
+  $("cloudLogoutBtn").classList.toggle("hidden",!user);
+  $("cloudLoginBtn").classList.toggle("hidden",!!user);
+  $("cloudRegisterBtn").classList.toggle("hidden",!!user);
+  $("cloudUserInfo").textContent=user?`Connecté : ${user.email}`:"";
+  if(!user){
+    cloudUnsubscribeBooks?.(); cloudUnsubscribeMeta?.();
+    cloudUnsubscribeBooks=cloudUnsubscribeMeta=null; cloudCache.clear();
+    cloudSetStatus("Non connecté."); return;
+  }
+  cloudSetStatus("Chargement du Cloud…","syncing");
+  subscribeCloud(user.uid);
+}
+function subscribeCloud(uid){
+  cloudUnsubscribeBooks?.(); cloudUnsubscribeMeta?.();
+  cloudUnsubscribeMeta=cloudMetaRef(uid).onSnapshot(s=>{
+    if(s.exists){
+      cloudLatestTotals=s.data()?.collectionTotals||{};
+      localStorage.setItem(COLLECTION_TOTALS_KEY,JSON.stringify(cloudLatestTotals));
+    }
+  },e=>cloudSetStatus(`Erreur Cloud : ${e.message}`,"error"));
+
+  cloudUnsubscribeBooks=cloudBooksRef(uid).onSnapshot(async snap=>{
+    if(cloudUploading) return;
+    const remote=[]; cloudCache.clear();
+    snap.forEach(d=>{const b={...d.data(),id:d.id};remote.push(b);cloudCache.set(d.id,cloudBookHash(b))});
+    if(remote.length===0&&books.length>0){
+      cloudSetStatus(`Envoi initial de ${books.length} ouvrage(s)…`,"syncing");
+      await syncLocalToCloud(true); return;
+    }
+    cloudApplyingRemote=true;
+    try{
+      books=remote; localStorage.setItem(STORAGE_KEY,JSON.stringify(books));
+      render(); renderSnapshots();
+      cloudSetStatus(`${books.length} ouvrage(s) synchronisé(s).`,"online");
+    }finally{cloudApplyingRemote=false}
+  },e=>cloudSetStatus(`Erreur de lecture : ${e.message}`,"error"));
+}
+async function syncLocalToCloud(force=false){
+  const user=cloudAuth?.currentUser;
+  if(!user||!cloudDb||cloudUploading)return;
+  cloudUploading=true; cloudSetStatus("Synchronisation en cours…","syncing");
+  try{
+    const localMap=new Map(books.map(b=>[String(b.id),b])),ops=[];
+    for(const [id,b] of localMap){
+      const h=cloudBookHash(b);
+      if(force||cloudCache.get(id)!==h)ops.push({type:"set",id,book:b});
+    }
+    for(const id of cloudCache.keys())if(!localMap.has(id))ops.push({type:"delete",id});
+    for(let i=0;i<ops.length;i+=450){
+      const batch=cloudDb.batch();
+      ops.slice(i,i+450).forEach(op=>{
+        const ref=cloudBooksRef(user.uid).doc(op.id);
+        if(op.type==="set"){const clean={...op.book};delete clean.id;batch.set(ref,clean)}
+        else batch.delete(ref);
+      });
+      await batch.commit();
+    }
+    await cloudMetaRef(user.uid).set({collectionTotals:getCollectionTotals(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    cloudCache=new Map(books.map(b=>[String(b.id),cloudBookHash(b)]));
+    cloudSetStatus(`${books.length} ouvrage(s) synchronisé(s).`,"online");
+  }catch(e){cloudSetStatus(`Échec : ${e.message}`,"error")}
+  finally{cloudUploading=false}
+}
+function queueCloudSync(){clearTimeout(cloudSyncTimer);cloudSyncTimer=setTimeout(()=>syncLocalToCloud(false),700)}
+async function reloadFromCloud(){
+  const user=cloudAuth?.currentUser;if(!user)return;
+  const snap=await cloudBooksRef(user.uid).get(),remote=snap.docs.map(d=>({...d.data(),id:d.id}));
+  const meta=await cloudMetaRef(user.uid).get();
+  cloudApplyingRemote=true;
+  try{
+    books=remote;localStorage.setItem(STORAGE_KEY,JSON.stringify(books));
+    if(meta.exists)localStorage.setItem(COLLECTION_TOTALS_KEY,JSON.stringify(meta.data()?.collectionTotals||{}));
+    render();renderSnapshots();
+    cloudCache=new Map(books.map(b=>[String(b.id),cloudBookHash(b)]));
+    cloudSetStatus(`${books.length} ouvrage(s) rechargé(s).`,"online");
+  }finally{cloudApplyingRemote=false}
+}
+window.BiblioCloud={queueSync:queueCloudSync,isApplyingRemote:()=>cloudApplyingRemote,forceSync:()=>syncLocalToCloud(true),reload:reloadFromCloud};
+
+$("cloudBtn").addEventListener("click",()=>{fillFirebaseConfigForm();showView("cloudView")});
+$("cloudRegisterBtn").addEventListener("click",async()=>{
+  if(!cloudAuth&&!(await initializeCloud()))return;
+  try{await cloudAuth.createUserWithEmailAndPassword($("cloudEmail").value.trim(),$("cloudPassword").value)}
+  catch(e){cloudSetStatus(`Création impossible : ${e.message}`,"error")}
+});
+$("cloudLoginBtn").addEventListener("click",async()=>{
+  if(!cloudAuth&&!(await initializeCloud()))return;
+  try{await cloudAuth.signInWithEmailAndPassword($("cloudEmail").value.trim(),$("cloudPassword").value)}
+  catch(e){cloudSetStatus(`Connexion impossible : ${e.message}`,"error")}
+});
+$("cloudLogoutBtn").addEventListener("click",()=>cloudAuth?.signOut());
+$("cloudUploadBtn").addEventListener("click",()=>window.BiblioCloud.forceSync());
+$("cloudDownloadBtn").addEventListener("click",()=>window.BiblioCloud.reload());
+initializeCloud();
 
 
 render();

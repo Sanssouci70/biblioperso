@@ -1,4 +1,4 @@
-# BiblioPerso 4.1 — PWA iPhone
+# BiblioPerso 5.0.1 Cloud — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -300,3 +300,19 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - ce total est mémorisé une seule fois ;
 - les tomes manquants sont calculés à partir de cette valeur ;
 - les fiches d’ouvrages ne dupliquent plus cette information.
+
+
+## Nouveautés 5.0 Cloud
+- synchronisation PC / iPhone ;
+- connexion par e-mail et mot de passe ;
+- stockage d’un document Firestore par ouvrage ;
+- synchronisation automatique après modification ;
+- envoi initial automatique si le Cloud est vide ;
+- mode local conservé sans configuration Cloud.
+
+
+## Configuration intégrée
+- projet Firebase : `biblioperso-3ffe9` ;
+- plus aucune clé Firebase à recopier dans l’application ;
+- il reste à publier `firestore.rules` et à autoriser le domaine GitHub Pages ;
+- ensuite, créer le compte de synchronisation depuis BiblioPerso.
