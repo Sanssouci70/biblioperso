@@ -1,4 +1,4 @@
-# BiblioPerso V1.3 — PWA iPhone
+# BiblioPerso V1.3.1 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -139,3 +139,14 @@ Après la mise à jour GitHub, ouvre d’abord l’adresse dans Safari et rechar
 - interrogation de Google Books et Open Library ;
 - ouverture automatique de la fiche préremplie ;
 - scan caméra retiré temporairement de l’interface, en attendant une version plus fiable.
+
+
+## Correctif V1.3.1
+- aucun chiffre à taper en usage normal ;
+- scan caméra EAN-13 avec html5-qrcode ;
+- solution de secours : photographier le code-barres ;
+- après lecture, contrôle des doublons puis récupération automatique des informations ;
+- saisie manuelle cachée dans une rubrique exceptionnelle.
+
+## Conseil sur iPhone
+Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux vidéo sur les petits codes EAN. Prendre la photo de près, nette, avec tout le code visible.

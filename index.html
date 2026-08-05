@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso V1.3</title>
+  <title>BiblioPerso V1.3.1</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -78,6 +78,13 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
 
 
 
+
+.html5-reader{width:100%;min-height:80px}
+.html5-reader video{border-radius:14px!important;object-fit:cover}
+.html5-reader img{max-width:100%}
+.scan-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
+
 .lookup-loading{opacity:.65;pointer-events:none}
 .isbn-help{font-size:.86rem;color:#6f675e;margin-top:8px}
 
@@ -138,7 +145,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 1.3 · recherche ISBN</p>
+      <p class="subtitle">Version 1.3.1 · scan ISBN iPhone</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -226,7 +233,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
       <div class="primary-actions">
         <button id="addBtn" class="primary">＋ Ajouter un ouvrage</button>
         <button id="dashboardBtn">📊 Tableau de bord</button>
-        <button id="scanBtn">🔎 Rechercher par ISBN</button>
+        <button id="scanBtn">📷 Scanner un ISBN</button>
         <button id="inventoryBtn">📦 Commencer un inventaire</button>
         <button id="locationsBtn">📍 Emplacements</button>
         <button id="wishlistBtn">🛒 À acheter</button>
@@ -437,16 +444,36 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
     <section id="scanView" class="view">
       <div class="view-title">
         <button class="back-btn" data-back>←</button>
-        <h2>Rechercher un ouvrage par ISBN</h2>
+        <h2>Scanner un ISBN</h2>
       </div>
+
       <div class="panel">
-        <p><strong>Saisis les 13 chiffres placés sous le code-barres.</strong></p>
-        <p class="small-note">BiblioPerso recherchera automatiquement les informations bibliographiques. Le scan caméra reviendra dans une prochaine version.</p>
-        <label>Saisir ou coller un ISBN
-          <input id="manualScanIsbn" inputmode="numeric" placeholder="978…" autocomplete="off">
+        <p><strong>Place le code-barres horizontalement dans le cadre.</strong></p>
+        <div id="html5Reader" class="html5-reader"></div>
+        <div id="scanStatus" class="metadata-status hidden"></div>
+        <div class="scan-actions">
+          <button id="startHtml5ScanBtn" class="primary">Ouvrir la caméra</button>
+          <button id="stopHtml5ScanBtn" class="hidden">Arrêter</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Solution de secours fiable</h3>
+        <p class="small-note">Prends une photo rapprochée du code-barres. BiblioPerso la lit puis remplit automatiquement la fiche.</p>
+        <label class="file-button">📷 Photographier le code-barres
+          <input id="barcodePhotoInput" type="file" accept="image/*" capture="environment">
         </label>
-        <button id="manualScanSearch" class="primary">Rechercher et remplir la fiche</button>
-        <div id="isbnLookupStatus" class="metadata-status hidden"></div>
+      </div>
+
+      <div class="panel">
+        <details>
+          <summary>Saisie manuelle exceptionnelle</summary>
+          <label>ISBN
+            <input id="manualScanIsbn" inputmode="numeric" placeholder="978…" autocomplete="off">
+          </label>
+          <button id="manualScanSearch" class="primary">Rechercher et remplir la fiche</button>
+          <div id="isbnLookupStatus" class="metadata-status hidden"></div>
+        </details>
       </div>
     </section>
 
@@ -482,7 +509,7 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
         <p class="small-note">BiblioPerso conserve jusqu’à 10 points de restauration dans ce navigateur.</p>
         <div id="snapshotList" class="results empty">Aucune sauvegarde automatique.</div>
       </div>
-<div class="panel"><h3>Nouveautés V1.3</h3><p class="small-note">Recherche ISBN manuelle fiabilisée, détection des doublons avant ouverture, récupération automatique des informations et scan caméra temporairement retiré de l’interface.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
+<div class="panel"><h3>Correctif V1.3.1</h3><p class="small-note">Retour du scan sans saisie : caméra avec html5-qrcode, lecture EAN-13, photographie du code-barres en solution de secours, puis remplissage automatique de la fiche.</p></div><p class="small-note">Les données sont conservées localement dans ce navigateur. Pense à exporter régulièrement une sauvegarde.</p>
     </section>
   </main>
 
@@ -505,8 +532,8 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
     <div id="seriesDialogBody"></div>
   </dialog>
 
-  <script src="https://unpkg.com/@zxing/browser@0.1.1/umd/zxing-browser.min.js"></script>
-  <script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
 const STORAGE_KEY = "biblioperso_books_v02";
 const SNAPSHOT_KEY = "biblioperso_snapshots_v07";
 let books = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -572,7 +599,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"1.3",
+    version:"1.3.1",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -594,7 +621,7 @@ function save(createSnapshot=true) {
   renderSnapshots();
 }
 function showView(id) {
-  if(id !== "scanView" && typeof stopCamera === "function") stopCamera();
+  if(id !== "scanView"){ if(typeof stopCamera === "function") stopCamera(); if(typeof stopHtml5Scan === "function") stopHtml5Scan(); }
   views.forEach(v => v.classList.toggle("active", v.id === id));
   window.scrollTo({top:0, behavior:"instant"});
 }
@@ -1150,6 +1177,8 @@ let scanStream = null;
 let scanControls = null;
 let scanReader = null;
 let scanHandlingResult = false;
+let html5Scanner = null;
+let html5Scanning = false;
 
 function cleanIsbn(value){
   return String(value || "").replace(/[^0-9Xx]/g,"").toUpperCase();
@@ -1441,9 +1470,160 @@ $("scanBtn").addEventListener("click",()=>{
   setScanStatus("Prêt.");
   showView("scanView");
 });
-if($("startCameraBtn")) $("startCameraBtn").addEventListener("click",startCamera);
-if($("testCameraBtn")) $("testCameraBtn").addEventListener("click",testCameraOnly);
-if($("stopCameraBtn")) $("stopCameraBtn").addEventListener("click",stopCamera);
+
+async function processDetectedIsbn(rawValue){
+  if(scanHandlingResult) return;
+  const isbn = cleanIsbn(rawValue);
+  const status = $("scanStatus");
+  status.className = "metadata-status";
+  status.innerHTML = `<strong>Code détecté :</strong> ${escapeHtml(isbn || rawValue)}`;
+
+  if(!validIsbn(isbn)){
+    status.className = "metadata-status error";
+    status.innerHTML = `<strong>Code lu, mais ISBN invalide :</strong> ${escapeHtml(isbn || rawValue)}`;
+    return;
+  }
+
+  scanHandlingResult = true;
+  if(navigator.vibrate) navigator.vibrate(120);
+  await stopHtml5Scan();
+
+  const existing = books.find(b=>cleanIsbn(b.isbn)===isbn);
+  if(existing){
+    status.className = "metadata-status success";
+    status.innerHTML = `<strong>Déjà enregistré :</strong> ${escapeHtml(existing.title)}${locationOf(existing) ? " · "+escapeHtml(locationOf(existing)) : ""}`;
+    openDetail(existing.id);
+    scanHandlingResult = false;
+    return;
+  }
+
+  status.className = "metadata-status";
+  status.innerHTML = `<strong>ISBN ${escapeHtml(isbn)} détecté.</strong><br>Recherche des informations…`;
+
+  try{
+    const metadata = await fetchBookMetadata(isbn);
+    openForm();
+    $("isbn").value = isbn;
+
+    if(metadata){
+      $("title").value = metadata.title || "";
+      $("author").value = metadata.author || "";
+      $("publisher").value = metadata.publisher || "";
+      $("year").value = metadata.year || "";
+      $("pages").value = metadata.pages || "";
+      $("language").value = metadata.language || "";
+      showSmartSuggestion(metadata);
+      activateTab("generalTab");
+      $("metadataStatus").className = "metadata-status success";
+      $("metadataStatus").innerHTML = `<strong>Fiche remplie automatiquement.</strong><br>Source : ${escapeHtml(metadata.source || "base bibliographique")}. Complète seulement les informations personnelles.`;
+    }else{
+      activateTab("generalTab");
+      $("metadataStatus").className = "metadata-status error";
+      $("metadataStatus").innerHTML = `<strong>ISBN reconnu, mais fiche introuvable.</strong><br>L’ISBN est conservé ; complète les autres champs.`;
+    }
+  }catch(error){
+    openForm();
+    $("isbn").value = isbn;
+    activateTab("generalTab");
+    $("metadataStatus").className = "metadata-status error";
+    $("metadataStatus").innerHTML = `<strong>ISBN reconnu.</strong><br>La recherche en ligne a échoué ; complète la fiche manuellement.`;
+    console.error(error);
+  }finally{
+    scanHandlingResult = false;
+  }
+}
+
+async function startHtml5Scan(){
+  const status = $("scanStatus");
+  if(!window.Html5Qrcode){
+    status.className = "metadata-status error";
+    status.innerHTML = "<strong>Le lecteur n’a pas été chargé.</strong><br>Recharge la page dans Safari avec une connexion Internet.";
+    return;
+  }
+  if(html5Scanning) return;
+
+  try{
+    html5Scanner = html5Scanner || new Html5Qrcode("html5Reader", {
+      formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8]
+    });
+
+    const config = {
+      fps: 12,
+      qrbox: (viewfinderWidth, viewfinderHeight) => ({
+        width: Math.floor(viewfinderWidth * 0.88),
+        height: Math.max(100, Math.floor(viewfinderHeight * 0.28))
+      }),
+      aspectRatio: 1.777778,
+      experimentalFeatures: { useBarCodeDetectorIfSupported: false },
+      videoConstraints: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    };
+
+    status.className = "metadata-status";
+    status.textContent = "Ouverture de la caméra…";
+    await html5Scanner.start(
+      { facingMode: "environment" },
+      config,
+      decodedText => processDetectedIsbn(decodedText),
+      () => {}
+    );
+    html5Scanning = true;
+    $("startHtml5ScanBtn").classList.add("hidden");
+    $("stopHtml5ScanBtn").classList.remove("hidden");
+    status.className = "metadata-status success";
+    status.textContent = "Caméra ouverte. Approche le code-barres et garde-le horizontal.";
+  }catch(error){
+    status.className = "metadata-status error";
+    status.innerHTML = `<strong>Impossible d’ouvrir le lecteur.</strong><br>${escapeHtml(error?.message || String(error))}<br>Utilise « Photographier le code-barres » juste en dessous.`;
+    console.error("html5-qrcode", error);
+  }
+}
+
+async function stopHtml5Scan(){
+  if(html5Scanner && html5Scanning){
+    try{ await html5Scanner.stop(); }catch(error){}
+  }
+  html5Scanning = false;
+  $("startHtml5ScanBtn")?.classList.remove("hidden");
+  $("stopHtml5ScanBtn")?.classList.add("hidden");
+}
+
+$("startHtml5ScanBtn").addEventListener("click", startHtml5Scan);
+$("stopHtml5ScanBtn").addEventListener("click", stopHtml5Scan);
+
+$("barcodePhotoInput").addEventListener("change", async event=>{
+  const file = event.target.files?.[0];
+  if(!file) return;
+  const status = $("scanStatus");
+  status.className = "metadata-status";
+  status.textContent = "Lecture de la photo…";
+
+  if(!window.Html5Qrcode){
+    status.className = "metadata-status error";
+    status.textContent = "Le lecteur n’a pas été chargé. Recharge la page.";
+    return;
+  }
+
+  try{
+    await stopHtml5Scan();
+    html5Scanner = html5Scanner || new Html5Qrcode("html5Reader", {
+      formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8]
+    });
+    const decodedText = await html5Scanner.scanFile(file, true);
+    await processDetectedIsbn(decodedText);
+  }catch(error){
+    status.className = "metadata-status error";
+    status.innerHTML = "<strong>Code-barres non reconnu sur la photo.</strong><br>Reprends-la de près, bien nette, avec tout le code visible.";
+    console.error("scan photo", error);
+  }finally{
+    event.target.value = "";
+  }
+});
+
+
 $("manualScanSearch").addEventListener("click",async()=>{
   const isbn = cleanIsbn($("manualScanIsbn").value);
   const status = $("isbnLookupStatus");
