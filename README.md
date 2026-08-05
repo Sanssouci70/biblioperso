@@ -1,4 +1,4 @@
-# BiblioPerso 4.0.3 — PWA iPhone
+# BiblioPerso 4.1 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -291,3 +291,12 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - le titre d’un tome manquant est bien sauvegardé ;
 - le nombre total saisi dans la fiche est propagé à toute la collection ;
 - après validation, retour direct à la collection concernée.
+
+
+## Nouveautés 4.1
+- suppression du champ « Nombre de tomes parus » dans chaque fiche d’ouvrage ;
+- ajout d’une information unique au niveau de la collection ;
+- le total de la collection se modifie dans Collections → nom de la collection ;
+- ce total est mémorisé une seule fois ;
+- les tomes manquants sont calculés à partir de cette valeur ;
+- les fiches d’ouvrages ne dupliquent plus cette information.

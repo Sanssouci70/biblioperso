@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 4.0.3</title>
+  <title>BiblioPerso 4.1</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -194,7 +194,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 4.0.3 · enregistrement des manquants corrigé</p>
+      <p class="subtitle">Version 4.1 · données de collection séparées</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -379,9 +379,6 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
             <input id="cycle" list="cycleSuggestions" placeholder="Ex. Louve">
             <datalist id="cycleSuggestions"></datalist>
           </label>
-          <label>Nombre de tomes parus dans ce cycle
-            <input id="publishedVolumes" type="number" min="0" inputmode="numeric" placeholder="Ex. 7">
-          </label>
           <label>Prochain tome annoncé
             <input id="nextVolume" inputmode="decimal" placeholder="Ex. 8">
           </label>
@@ -542,12 +539,15 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
       </div>
       <div id="collectionProgressPanel" class="panel"></div>
       <div id="collectionAnalysisPanel" class="panel">
-        <h3>Détecter les tomes manquants</h3>
+        <h3>Informations de la collection</h3>
+        <p class="small-note">Cette information appartient à toute la collection, pas à chaque ouvrage.</p>
         <p class="small-note">L’univers est déjà sélectionné : aucune saisie supplémentaire n’est nécessaire.</p>
         <label>Nombre total de tomes de la collection
           <input id="collectionMaxVolume" type="number" min="1" inputmode="numeric" placeholder="Ex. 44">
         </label>
-        <button id="saveCollectionTotalBtn">Enregistrer ce total</button>
+        <button id="saveCollectionTotalBtn" class="primary">Enregistrer le total de la collection</button>
+        <hr>
+        <h3>Détecter les tomes manquants</h3>
         <label class="check-label">
           <input id="collectionAddToBuy" type="checkbox">
           Ajouter les tomes créés à « À acheter »
@@ -745,7 +745,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"4.0.3",
+    version:"4.1",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -988,7 +988,7 @@ function collectionSummary(universe){
       const n=Number(v);
       if(Number.isFinite(n)){owned.add(n);maxKnown=Math.max(maxKnown,n);}
     });
-    maxKnown=Math.max(maxKnown,Number(b.publishedVolumes||0));
+
   });
 
   const total=Math.max(maxKnown,savedCollectionTotal(universe),0);
@@ -1122,7 +1122,6 @@ function analyzeCurrentCollection(){
         cycle:"",
         series:universe,
         volume:String(i),
-        publishedVolumes:String(max),
         nextVolume:"",
         nextReleaseDate:"",
         format:template.format||"Autre",
@@ -1192,8 +1191,7 @@ function createMissingVolumes(){
     books.push({
       id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+i),
       category:t.category||"BD", title:"", subtitle:"",
-      author:t.author||"", contributors:"", universe, cycle, series:universe, volume:String(i),
-      publishedVolumes:String(max), nextVolume:"", nextReleaseDate:"",
+      author:t.author||"", contributors:"", universe, cycle, series:universe, volume:String(i), nextVolume:"", nextReleaseDate:"",
       format:t.format||"Autre", containsVolumes:"", collection:t.collection||"",
       isbn:"", publisher:t.publisher||"", year:"", pages:"", language:"",
       location:"", column:"", shelf:"", quantity:1,
@@ -1592,7 +1590,7 @@ function openForm(book=null) {
   $("formTitle").textContent = book ? "Modifier l’ouvrage" : "Ajouter un ouvrage";
   $("deleteBtn").classList.toggle("hidden", !book);
   currentBookId = book?.id || null;
-  const fields = ["category","title","subtitle","author","contributors","universe","cycle","publishedVolumes","nextVolume","nextReleaseDate","volume","format","containsVolumes","collection","isbn","publisher","year","pages","language","location","status","condition","tags","notes","quantity","favoriteLevel"];
+  const fields = ["category","title","subtitle","author","contributors","universe","cycle","nextVolume","nextReleaseDate","volume","format","containsVolumes","collection","isbn","publisher","year","pages","language","location","status","condition","tags","notes","quantity","favoriteLevel"];
   fields.forEach(f=>{ if(book && book[f] !== undefined) $(f).value = book[f]; });
   if(book && !$("universe").value) $("universe").value = book.series || "";
   $("read").checked = !!book?.read;
@@ -1625,7 +1623,7 @@ function getFormData(){
     contributors:$("contributors").value.trim(),
     universe:$("universe").value.trim(),
     cycle:$("cycle").value.trim(),
-    publishedVolumes:$("publishedVolumes").value.trim(),
+    
     nextVolume:$("nextVolume").value.trim(),
     nextReleaseDate:$("nextReleaseDate").value,
     series:$("universe").value.trim(),
@@ -2478,18 +2476,6 @@ $("bookForm").addEventListener("submit",e=>{
   const data=getFormData();
   if(data.location) localStorage.setItem("biblioperso_last_location", data.location);
 
-  const enteredTotal=Number(data.publishedVolumes||0);
-  if(enteredTotal>0 && data.universe){
-    const totals=getCollectionTotals();
-    totals[normalize(data.universe)]=enteredTotal;
-    localStorage.setItem(COLLECTION_TOTALS_KEY,JSON.stringify(totals));
-
-    books.forEach(book=>{
-      if(normalize(universeOf(book))===normalize(data.universe)){
-        book.publishedVolumes=String(enteredTotal);
-      }
-    });
-  }
 
   const duplicateByIsbn = data.isbn && books.find(b=>b.id!==data.id && cleanIsbn(b.isbn)===cleanIsbn(data.isbn));
   if(duplicateByIsbn){
