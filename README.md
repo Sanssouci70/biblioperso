@@ -1,4 +1,4 @@
-# BiblioPerso 3.2 — PWA iPhone
+# BiblioPerso 4.0 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -253,3 +253,13 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - création automatique des numéros de tomes absents ;
 - option pour ajouter ces tomes à la liste « À acheter » ;
 - les fiches créées sont marquées « À compléter ».
+
+
+## Nouveautés 4.0
+- nouvelle rubrique « Collections » ;
+- progression par univers ;
+- détail complet tome par tome ;
+- distinction Possédé / Manquant / À acheter / Non créé ;
+- analyse automatique des numéros absents ;
+- création automatique des fiches manquantes ;
+- option d’ajout direct à « À acheter ».

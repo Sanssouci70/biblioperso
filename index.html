@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 3.2</title>
+  <title>BiblioPerso 4.0</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -47,6 +47,19 @@ dialog{width:min(92vw,520px);border:0;border-radius:18px;padding:18px;box-shadow
   .form-pager{top:118px;display:block}
   .form-pager span{display:block;margin-top:3px}
 }
+
+
+.collection-card{padding:14px;border:1px solid #e1d9cf;border-radius:14px;background:#fcfaf7;text-align:left}
+.collection-card strong{display:block;font-size:1.05rem}
+.collection-progress{height:10px;border-radius:999px;background:#e8e1d8;overflow:hidden;margin:10px 0 6px}
+.collection-progress > span{display:block;height:100%;background:#6c7a68}
+.collection-stats{font-size:.86rem;color:#6f675e}
+.volume-row{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid #e1d9cf;border-radius:12px;background:#fff}
+.volume-number{font-weight:700;text-align:center}
+.volume-state{font-size:.82rem}
+.volume-owned{background:#edf6ed}
+.volume-missing{background:#fff8e5}
+.volume-uncreated{background:#f7f3ed}
 
 .book-page-title{font-size:1.65rem;margin:0 0 14px}
 .page-actions{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:5;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:rgba(244,239,231,.96);padding:10px;border:1px solid #d8d0c4;border-radius:14px;backdrop-filter:blur(10px)}
@@ -181,7 +194,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 3.2 · manquants et achats</p>
+      <p class="subtitle">Version 4.0 · gestionnaire de collections</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -506,6 +519,41 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
       <div id="upcomingResults" class="results empty">Aucune sortie annoncée.</div>
     </section>
 
+
+    <section id="collectionsView" class="view">
+      <div class="view-title">
+        <button class="back-btn" data-back>←</button>
+        <h2>Collections</h2>
+      </div>
+      <p class="page-intro">Suivi des univers, progression, tomes possédés et tomes manquants.</p>
+      <label class="search-box">
+        <span>🔎</span>
+        <input id="collectionsSearchInput" type="search" placeholder="Rechercher une collection" autocomplete="off">
+      </label>
+      <div id="collectionsResults" class="results empty">Aucune collection enregistrée.</div>
+    </section>
+
+    <section id="collectionDetailView" class="view">
+      <div class="view-title">
+        <button class="back-btn" id="collectionBackBtn">←</button>
+        <h2 id="collectionDetailTitle">Collection</h2>
+      </div>
+      <div id="collectionProgressPanel" class="panel"></div>
+      <div id="collectionAnalysisPanel" class="panel">
+        <h3>Analyser ma collection</h3>
+        <label>Dernier tome existant
+          <input id="collectionMaxVolume" type="number" min="1" inputmode="numeric" placeholder="Ex. 43">
+        </label>
+        <label class="check-label">
+          <input id="collectionAddToBuy" type="checkbox">
+          Ajouter les tomes créés à « À acheter »
+        </label>
+        <button id="analyzeCollectionBtn" class="primary">Détecter les manquants</button>
+        <div id="collectionAnalysisResult" class="smart-note hidden"></div>
+      </div>
+      <div id="collectionVolumes" class="results empty">Aucun tome.</div>
+    </section>
+
     <section id="missingView" class="view">
       <div class="view-title">
         <button class="back-btn" data-back>←</button>
@@ -607,6 +655,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
         <button id="locationsBtn">📍 Emplacements</button>
         <button id="wishlistBtn">🛒 À acheter</button>
         <button id="seriesBtn">📚 Univers et cycles</button>
+        <button id="collectionsBtn">⭐ Collections</button>
         <button id="missingBtn">📋 Ce qui me manque</button>
         <button id="upcomingBtn">📅 Sorties à venir</button>
         </div><h3>Données et sécurité</h3><div class="primary-actions"><button id="quickBackupBtn">💾 Sauvegarder ma bibliothèque</button>
@@ -656,6 +705,7 @@ const SNAPSHOT_KEY = "biblioperso_snapshots_v07";
 let books = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let currentBookId = null;
 let bookOriginView = 'resultsView';
+let currentCollectionUniverse = '';
 let inventoryLocation = null;
 let inventoryStartCount = 0;
 let inventoryTemplate = null;
@@ -717,7 +767,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"3.2",
+    version:"4.0",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -915,6 +965,188 @@ function renderUpcoming(){
       actions.appendChild(btn);
     }
     box.appendChild(card);
+  });
+}
+
+
+
+function collectionSummary(universe){
+  const items=books.filter(b=>normalize(universeOf(b))===normalize(universe));
+  const owned=new Set();
+  const missing=new Set();
+  let maxKnown=0;
+
+  items.forEach(b=>{
+    const n=Number(String(b.volume||"").replace(",","."));
+    if(Number.isFinite(n)){
+      maxKnown=Math.max(maxKnown,n);
+      if(b.status==="owned" && !b.missingInSeries) owned.add(n);
+      if(b.missingInSeries) missing.add(n);
+    }
+    parseContainedVolumes(b.containsVolumes).forEach(v=>{
+      const n=Number(v);
+      if(Number.isFinite(n)){owned.add(n);maxKnown=Math.max(maxKnown,n);}
+    });
+    maxKnown=Math.max(maxKnown,Number(b.publishedVolumes||0));
+  });
+
+  const total=Math.max(maxKnown,0);
+  return {items,owned,missing,total};
+}
+
+function renderCollections(){
+  const q=normalize($("collectionsSearchInput")?.value||"");
+  const universes=[...new Set(books.map(universeOf).filter(Boolean))]
+    .filter(u=>!q||normalize(u).includes(q))
+    .sort((a,b)=>a.localeCompare(b,"fr",{numeric:true}));
+
+  const box=$("collectionsResults");
+  if(!universes.length){
+    box.className="results empty";
+    box.textContent="Aucune collection enregistrée.";
+    return;
+  }
+
+  box.className="results";
+  box.innerHTML="";
+  universes.forEach(universe=>{
+    const s=collectionSummary(universe);
+    const total=s.total||s.owned.size+s.missing.size;
+    const percent=total?Math.min(100,Math.round((s.owned.size/total)*100)):0;
+    const remaining=Math.max(0,total-s.owned.size-s.missing.size);
+
+    const btn=document.createElement("button");
+    btn.className="collection-card";
+    btn.innerHTML=`<strong>${escapeHtml(universe)}</strong>
+      <div class="collection-progress"><span style="width:${percent}%"></span></div>
+      <div class="collection-stats">${s.owned.size} / ${total||"?"} tome(s) · ${s.missing.size} manquant(s) · ${remaining} restant(s)</div>`;
+    btn.addEventListener("click",()=>openCollection(universe));
+    box.appendChild(btn);
+  });
+}
+
+function openCollection(universe){
+  currentCollectionUniverse=universe;
+  $("collectionDetailTitle").textContent=universe;
+  const s=collectionSummary(universe);
+  if(s.total) $("collectionMaxVolume").value=String(s.total);
+  renderCollectionDetail();
+  showView("collectionDetailView");
+}
+
+function renderCollectionDetail(){
+  const universe=currentCollectionUniverse;
+  const s=collectionSummary(universe);
+  const total=Number($("collectionMaxVolume").value)||s.total||0;
+  const percent=total?Math.min(100,Math.round((s.owned.size/total)*100)):0;
+  const remaining=Math.max(0,total-s.owned.size-s.missing.size);
+
+  $("collectionProgressPanel").innerHTML=`
+    <h3>${escapeHtml(universe)}</h3>
+    <div class="collection-progress"><span style="width:${percent}%"></span></div>
+    <div class="collection-stats">${s.owned.size} possédé(s) · ${s.missing.size} manquant(s) · ${remaining} restant(s)</div>`;
+
+  const box=$("collectionVolumes");
+  if(!total){
+    box.className="results empty";
+    box.textContent="Indique le dernier tome existant pour afficher la collection complète.";
+    return;
+  }
+
+  const byVolume=new Map();
+  s.items.forEach(b=>{
+    const n=Number(String(b.volume||"").replace(",","."));
+    if(Number.isFinite(n) && !byVolume.has(n)) byVolume.set(n,b);
+  });
+
+  box.className="results";
+  box.innerHTML="";
+  for(let i=1;i<=total;i++){
+    const book=byVolume.get(i);
+    const owned=s.owned.has(i);
+    const missing=s.missing.has(i);
+    const state=owned?"Possédé":missing?(book?.status==="buy"?"À acheter":"Manquant"):"Non créé";
+    const row=document.createElement("button");
+    row.className=`volume-row ${owned?"volume-owned":missing?"volume-missing":"volume-uncreated"}`;
+    row.innerHTML=`<span class="volume-number">${i}</span>
+      <span>${escapeHtml(book?.title || (missing?"Titre à compléter":""))}</span>
+      <span class="volume-state">${state}</span>`;
+    if(book){
+      row.addEventListener("click",()=>openDetail(book.id,"collectionDetailView"));
+    }
+    box.appendChild(row);
+  }
+}
+
+function analyzeCurrentCollection(){
+  const universe=currentCollectionUniverse;
+  const max=Number($("collectionMaxVolume").value);
+  if(!universe){alert("Aucune collection sélectionnée.");return;}
+  if(!Number.isInteger(max)||max<1){alert("Indique le dernier tome existant.");return;}
+
+  const s=collectionSummary(universe);
+  const missing=[];
+  for(let i=1;i<=max;i++){
+    if(!s.owned.has(i) && !s.missing.has(i)) missing.push(i);
+  }
+
+  const panel=$("collectionAnalysisResult");
+  panel.classList.remove("hidden");
+  if(!missing.length){
+    panel.innerHTML="<strong>Aucun tome manquant détecté.</strong>";
+    renderCollectionDetail();
+    return;
+  }
+
+  panel.innerHTML=`<strong>Tomes manquants détectés :</strong><br>${missing.join(", ")}<br><button id="createCollectionMissingBtn" class="primary">Créer ces fiches</button>`;
+  $("createCollectionMissingBtn").addEventListener("click",()=>{
+    const alsoBuy=$("collectionAddToBuy").checked;
+    const template=s.items[0]||{};
+    makeSnapshot("Avant création des tomes manquants");
+
+    missing.forEach(i=>{
+      books.push({
+        id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+i),
+        category:template.category||"BD",
+        title:`Tome ${i} — titre à compléter`,
+        subtitle:"",
+        author:template.author||"",
+        contributors:"",
+        universe,
+        cycle:"",
+        series:universe,
+        volume:String(i),
+        publishedVolumes:String(max),
+        nextVolume:"",
+        nextReleaseDate:"",
+        format:template.format||"Autre",
+        containsVolumes:"",
+        collection:template.collection||"",
+        isbn:"",
+        publisher:template.publisher||"",
+        year:"",
+        pages:"",
+        language:"",
+        location:"",
+        column:"",
+        shelf:"",
+        quantity:1,
+        status:alsoBuy?"buy":"wish",
+        condition:"Bon",
+        read:false,
+        needsCompletion:true,
+        missingInSeries:true,
+        favoriteLevel:0,
+        favorite:false,
+        tags:"tome manquant",
+        notes:alsoBuy?"Tome manquant à acheter.":"Tome manquant."
+      });
+    });
+
+    save(false);
+    renderCollections();
+    renderCollectionDetail();
+    panel.innerHTML=`<strong>${missing.length} fiche(s) créée(s).</strong>`;
   });
 }
 
@@ -2164,6 +2396,11 @@ $("searchBtn").addEventListener("click",()=>{
 $("searchInput").addEventListener("input",render);
 
 $("seriesBtn").addEventListener("click",()=>{renderSeries();showView("seriesView");});
+$("collectionsBtn").addEventListener("click",()=>{renderCollections();showView("collectionsView");});
+$("collectionsSearchInput").addEventListener("input",renderCollections);
+$("collectionBackBtn").addEventListener("click",()=>{renderCollections();showView("collectionsView");});
+$("analyzeCollectionBtn").addEventListener("click",analyzeCurrentCollection);
+$("collectionMaxVolume").addEventListener("input",renderCollectionDetail);
 $("missingBtn").addEventListener("click",()=>{renderMissing();showView("missingView");});
 $("upcomingBtn").addEventListener("click",()=>{renderUpcoming();showView("upcomingView");});
 $("seriesSearchInput").addEventListener("input",renderSeries);
