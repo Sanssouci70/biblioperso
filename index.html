@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 4.0.1</title>
+  <title>BiblioPerso 4.0.2</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -194,7 +194,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 4.0.1 · manquants dans Collections</p>
+      <p class="subtitle">Version 4.0.2 · total et titres des manquants</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -543,9 +543,10 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
       <div id="collectionAnalysisPanel" class="panel">
         <h3>Détecter les tomes manquants</h3>
         <p class="small-note">L’univers est déjà sélectionné : aucune saisie supplémentaire n’est nécessaire.</p>
-        <label>Dernier tome existant
-          <input id="collectionMaxVolume" type="number" min="1" inputmode="numeric" placeholder="Ex. 43">
+        <label>Nombre total de tomes de la collection
+          <input id="collectionMaxVolume" type="number" min="1" inputmode="numeric" placeholder="Ex. 44">
         </label>
+        <button id="saveCollectionTotalBtn">Enregistrer ce total</button>
         <label class="check-label">
           <input id="collectionAddToBuy" type="checkbox">
           Ajouter les tomes créés à « À acheter »
@@ -681,6 +682,7 @@ let books = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let currentBookId = null;
 let bookOriginView = 'resultsView';
 let currentCollectionUniverse = '';
+let editReturnView = 'homeView';
 let inventoryLocation = null;
 let inventoryStartCount = 0;
 let inventoryTemplate = null;
@@ -742,7 +744,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"4.0.1",
+    version:"4.0.2",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -945,6 +947,29 @@ function renderUpcoming(){
 
 
 
+const COLLECTION_TOTALS_KEY="biblioperso_collection_totals";
+
+function getCollectionTotals(){
+  try{return JSON.parse(localStorage.getItem(COLLECTION_TOTALS_KEY)||"{}")||{};}
+  catch{return {};}
+}
+function savedCollectionTotal(universe){
+  return Number(getCollectionTotals()[normalize(universe)]||0);
+}
+function saveCollectionTotal(){
+  const universe=currentCollectionUniverse;
+  const total=Number($("collectionMaxVolume").value);
+  if(!universe){alert("Aucune collection sélectionnée.");return;}
+  if(!Number.isInteger(total)||total<1){alert("Indique un nombre total valide.");return;}
+  const totals=getCollectionTotals();
+  totals[normalize(universe)]=total;
+  localStorage.setItem(COLLECTION_TOTALS_KEY,JSON.stringify(totals));
+  renderCollections();
+  renderCollectionDetail();
+  $("collectionAnalysisResult").classList.remove("hidden");
+  $("collectionAnalysisResult").innerHTML=`<strong>Total enregistré : ${total} tomes.</strong>`;
+}
+
 function collectionSummary(universe){
   const items=books.filter(b=>normalize(universeOf(b))===normalize(universe));
   const owned=new Set();
@@ -965,7 +990,7 @@ function collectionSummary(universe){
     maxKnown=Math.max(maxKnown,Number(b.publishedVolumes||0));
   });
 
-  const total=Math.max(maxKnown,0);
+  const total=Math.max(maxKnown,savedCollectionTotal(universe),0);
   return {items,owned,missing,total};
 }
 
@@ -1004,7 +1029,9 @@ function openCollection(universe){
   currentCollectionUniverse=universe;
   $("collectionDetailTitle").textContent=universe;
   const s=collectionSummary(universe);
-  if(s.total) $("collectionMaxVolume").value=String(s.total);
+  const saved=savedCollectionTotal(universe);
+  $("collectionMaxVolume").value=String(saved||s.total||"");
+  $("collectionAnalysisResult").classList.add("hidden");
   renderCollectionDetail();
   showView("collectionDetailView");
 }
@@ -1044,7 +1071,7 @@ function renderCollectionDetail(){
     const row=document.createElement("button");
     row.className=`volume-row ${owned?"volume-owned":missing?"volume-missing":"volume-uncreated"}`;
     row.innerHTML=`<span class="volume-number">${i}</span>
-      <span>${escapeHtml(book?.title || (missing?"Titre à compléter":""))}</span>
+      <span>${escapeHtml(book?.title || (missing?"Touchez pour saisir le titre":""))}</span>
       <span class="volume-state">${state}</span>`;
     if(book){
       row.addEventListener("click",()=>openDetail(book.id,"collectionDetailView"));
@@ -1059,6 +1086,9 @@ function analyzeCurrentCollection(){
   if(!universe){alert("Aucune collection sélectionnée.");return;}
   if(!Number.isInteger(max)||max<1){alert("Indique le dernier tome existant.");return;}
 
+  const totals=getCollectionTotals();
+  totals[normalize(universe)]=max;
+  localStorage.setItem(COLLECTION_TOTALS_KEY,JSON.stringify(totals));
   const s=collectionSummary(universe);
   const missing=[];
   for(let i=1;i<=max;i++){
@@ -1083,7 +1113,7 @@ function analyzeCurrentCollection(){
       books.push({
         id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+i),
         category:template.category||"BD",
-        title:`Tome ${i} — titre à compléter`,
+        title:"",
         subtitle:"",
         author:template.author||"",
         contributors:"",
@@ -1160,7 +1190,7 @@ function createMissingVolumes(){
     if(existing.has(String(i))) continue;
     books.push({
       id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+i),
-      category:t.category||"BD", title:`Tome ${i} — titre à compléter`, subtitle:"",
+      category:t.category||"BD", title:"", subtitle:"",
       author:t.author||"", contributors:"", universe, cycle, series:universe, volume:String(i),
       publishedVolumes:String(max), nextVolume:"", nextReleaseDate:"",
       format:t.format||"Autre", containsVolumes:"", collection:t.collection||"",
@@ -1612,7 +1642,7 @@ function getFormData(){
     status:$("status").value,
     condition:$("condition").value,
     read:$("read").checked,
-    needsCompletion:$("needsCompletion").checked,
+    needsCompletion:$("needsCompletion").checked && !$("title").value.trim() ? true : false,
     missingInSeries:$("missingInSeries").checked,
     favoriteLevel:Number($("favoriteLevel").value || 0),
     favorite:Number($("favoriteLevel").value || 0) > 0,
@@ -2324,7 +2354,10 @@ $("searchInput").addEventListener("keydown",e=>{
 });
 $("resultsBackBtn").addEventListener("click",()=>showView("searchView"));
 $("bookBackBtn").addEventListener("click",()=>showView(bookOriginView || "resultsView"));
-$("bookEditBtn").addEventListener("click",()=>openForm(currentBookId));
+$("bookEditBtn").addEventListener("click",()=>{
+  editReturnView=bookOriginView||"homeView";
+  openForm(currentBookId);
+});
 $("bookDuplicateBtn").addEventListener("click",()=>{
   const original=books.find(b=>b.id===currentBookId);
   if(!original) return;
@@ -2375,6 +2408,7 @@ $("collectionsBtn").addEventListener("click",()=>{renderCollections();showView("
 $("collectionsSearchInput").addEventListener("input",renderCollections);
 $("collectionsBuyBtn").addEventListener("click",()=>$("wishlistBtn").click());
 $("collectionBackBtn").addEventListener("click",()=>{renderCollections();showView("collectionsView");});
+$("saveCollectionTotalBtn").addEventListener("click",saveCollectionTotal);
 $("analyzeCollectionBtn").addEventListener("click",analyzeCurrentCollection);
 $("collectionMaxVolume").addEventListener("input",renderCollectionDetail);
 $("upcomingBtn").addEventListener("click",()=>{renderUpcoming();showView("upcomingView");});
@@ -2463,7 +2497,19 @@ $("bookForm").addEventListener("submit",e=>{
     $("inventoryScanBanner")?.classList.add("hidden");
     $("startHtml5ScanBtn")?.classList.remove("hidden");
     showView("inventoryView");
-  } else showView("homeView");
+  } else if(editReturnView==="collectionDetailView" && currentCollectionUniverse){
+    renderCollections();
+    renderCollectionDetail();
+    showView("collectionDetailView");
+    editReturnView="homeView";
+  } else if(editReturnView==="resultsView"){
+    renderResultsPage();
+    showView("resultsView");
+    editReturnView="homeView";
+  } else {
+    showView("homeView");
+    editReturnView="homeView";
+  }
 });
 $("deleteBtn").addEventListener("click",()=>{
   if(currentBookId && confirm("Supprimer cet ouvrage ?")){
