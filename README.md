@@ -1,4 +1,4 @@
-# BiblioPerso 3.1.6 — PWA iPhone
+# BiblioPerso 3.2 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -246,3 +246,10 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - la demande d’autorisation iPhone reste gérée par Safari et ne devrait apparaître que la première fois ;
 - après validation de la fiche, retour automatique à la séance d’inventaire ;
 - le livre suivant se lance à nouveau avec un seul toucher sur « Scanner l’ISBN suivant ».
+
+
+## Nouveautés 3.2
+- « Manquant dans la série » est distinct de « À acheter » ;
+- création automatique des numéros de tomes absents ;
+- option pour ajouter ces tomes à la liste « À acheter » ;
+- les fiches créées sont marquées « À compléter ».

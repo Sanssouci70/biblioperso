@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 3.1.6</title>
+  <title>BiblioPerso 3.2</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -181,7 +181,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 3.1.6 · inventaire enchaîné</p>
+      <p class="subtitle">Version 3.2 · manquants et achats</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -237,6 +237,10 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
               <option value="Roman">Roman</option>
               <option value="Autre">Autre</option>
             </select>
+          </label>
+          <label class="check-label">
+            <input id="missingInSeries" type="checkbox">
+            Manquant dans la série
           </label>
           <label>Statut
             <select id="filterStatus">
@@ -511,6 +515,20 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
         <span>🔎</span>
         <input id="missingSearchInput" type="search" placeholder="Filtrer par univers ou cycle" autocomplete="off">
       </label>
+      <div class="panel">
+        <h3>Créer les tomes manquants</h3>
+        <p class="small-note">Choisis un univers, puis indique le dernier tome existant. Seuls les numéros absents seront créés.</p>
+        <label>Univers<select id="missingUniverseSelect"></select></label>
+        <label>Cycle<select id="missingCycleSelect"></select></label>
+        <label>Dernier tome existant
+          <input id="missingMaxVolume" type="number" min="1" inputmode="numeric" placeholder="Ex. 40">
+        </label>
+        <label class="check-label">
+          <input id="missingAlsoBuy" type="checkbox">
+          Ajouter aussi à la liste « À acheter »
+        </label>
+        <button id="createMissingBtn" class="primary">Créer les tomes manquants</button>
+      </div>
       <div id="missingResults" class="results empty">Aucun tome manquant détecté.</div>
     </section>
 
@@ -699,7 +717,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"3.1.6",
+    version:"3.2",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -900,6 +918,60 @@ function renderUpcoming(){
   });
 }
 
+
+function refreshMissingSelectors(){
+  const u=$("missingUniverseSelect"), c=$("missingCycleSelect");
+  if(!u||!c) return;
+  const universes=[...new Set(books.map(universeOf).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr"));
+  const oldU=u.value;
+  u.innerHTML='<option value="">Choisir un univers</option>'+universes.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
+  if(universes.includes(oldU)) u.value=oldU;
+  const cycles=[...new Set(books.filter(b=>!u.value||normalize(universeOf(b))===normalize(u.value)).map(cycleOf).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr"));
+  const oldC=c.value;
+  c.innerHTML='<option value="">Hors cycle / cycle principal</option>'+cycles.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
+  if(cycles.includes(oldC)) c.value=oldC;
+}
+
+function createMissingVolumes(){
+  const universe=$("missingUniverseSelect").value.trim();
+  const cycle=$("missingCycleSelect").value.trim();
+  const max=Number($("missingMaxVolume").value);
+  const alsoBuy=$("missingAlsoBuy").checked;
+  if(!universe){alert("Choisis un univers.");return;}
+  if(!Number.isInteger(max)||max<1){alert("Indique le dernier tome existant.");return;}
+
+  const same=books.filter(b=>normalize(universeOf(b))===normalize(universe)&&normalize(cycleOf(b))===normalize(cycle));
+  const existing=new Set();
+  same.forEach(b=>{
+    if(b.volume) existing.add(String(Number(String(b.volume).replace(",","."))));
+    parseContainedVolumes(b.containsVolumes).forEach(v=>existing.add(String(Number(v))));
+  });
+  const t=same[0]||{};
+  const created=[];
+  makeSnapshot("Avant création des tomes manquants");
+  for(let i=1;i<=max;i++){
+    if(existing.has(String(i))) continue;
+    books.push({
+      id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+i),
+      category:t.category||"BD", title:`Tome ${i} — titre à compléter`, subtitle:"",
+      author:t.author||"", contributors:"", universe, cycle, series:universe, volume:String(i),
+      publishedVolumes:String(max), nextVolume:"", nextReleaseDate:"",
+      format:t.format||"Autre", containsVolumes:"", collection:t.collection||"",
+      isbn:"", publisher:t.publisher||"", year:"", pages:"", language:"",
+      location:"", column:"", shelf:"", quantity:1,
+      status:alsoBuy?"buy":"wish", condition:"Bon", read:false,
+      needsCompletion:true, missingInSeries:true, favoriteLevel:0, favorite:false,
+      tags:"tome manquant",
+      notes:alsoBuy?"Tome manquant à acheter.":"Tome manquant."
+    });
+    created.push(i);
+  }
+  if(!created.length){alert("Aucun tome manquant à créer.");return;}
+  save(false);
+  renderMissing();
+  alert(`${created.length} tome(s) créé(s) : ${created.join(", ")}.`);
+}
+
 function renderMissing(){
   const q = normalize($("missingSearchInput")?.value || "");
   const cards = [];
@@ -918,6 +990,17 @@ function renderMissing(){
       cards.push({universe,cycleName,info});
     });
   });
+  const explicit=books.filter(b=>b.missingInSeries);
+  explicit.forEach(b=>{
+    const hay=normalize(`${universeOf(b)} ${cycleOf(b)} ${b.title}`);
+    if(q && !hay.includes(q)) return;
+    cards.push({
+      universe:universeOf(b)||"Sans univers",
+      cycleName:cycleOf(b)||"Hors cycle",
+      explicitBook:b
+    });
+  });
+
   const box = $("missingResults");
   if(!box) return;
   if(!cards.length){
@@ -931,6 +1014,15 @@ function renderMissing(){
   cards.forEach(c=>{
     const el=document.createElement("div");
     el.className="missing-card";
+    if(c.explicitBook){
+      const b=c.explicitBook;
+      el.innerHTML=`<strong>${escapeHtml(b.title||`Tome ${b.volume}`)}</strong>
+        <div class="meta">${escapeHtml(displayAuthorName(b.author))} · ${escapeHtml(c.universe)}${b.volume?" · tome "+escapeHtml(b.volume):""}</div>
+        <span class="badge ${b.status}">${b.status==="buy"?"À acheter":"Manquant"}</span>`;
+      el.addEventListener("click",()=>openDetail(b.id,"missingView"));
+      box.appendChild(el);
+      return;
+    }
     const date = c.info.nextReleaseDate ? new Intl.DateTimeFormat("fr-FR").format(new Date(c.info.nextReleaseDate+"T12:00:00")) : "";
     el.innerHTML=`<strong>${escapeHtml(c.universe)}</strong>
       <div class="meta">${escapeHtml(c.cycleName)}</div>
@@ -1240,7 +1332,7 @@ function render() {
     btn.innerHTML = `<strong>${escapeHtml(b.title || "Titre à compléter")}${Number(b.favoriteLevel||0)>0 ? `<span class="favorite-mark">${'★'.repeat(Number(b.favoriteLevel||1))}</span>` : (b.favorite ? '<span class="favorite-mark">★</span>' : '')}</strong>
       <div class="meta">${escapeHtml(b.author)}${universeOf(b) ? " · "+escapeHtml(universeOf(b)) : ""}${cycleOf(b) ? " · "+escapeHtml(cycleOf(b)) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
       <div class="meta">${categoryLabel(b.category)} · ${escapeHtml(b.format)} · 📍 ${escapeHtml(locationOf(b))}</div>
-      <span class="badge ${b.status}">${statusLabel(b.status)}</span>${Number(b.quantity||1)>1 ? `<span class="badge">×${Number(b.quantity)}</span>` : ""}`;
+      <span class="badge ${b.status}">${b.missingInSeries&&b.status!=="buy"?"Manquant":statusLabel(b.status)}</span>${Number(b.quantity||1)>1 ? `<span class="badge">×${Number(b.quantity)}</span>` : ""}`;
     btn.addEventListener("click",()=>openDetail(b.id,"resultsView"));
     box.appendChild(btn);
   });
@@ -1265,6 +1357,7 @@ function openForm(book=null) {
   if(book && !$("universe").value) $("universe").value = book.series || "";
   $("read").checked = !!book?.read;
   $("needsCompletion").checked = !!book?.needsCompletion;
+  $("missingInSeries").checked = !!book?.missingInSeries;
   $("favoriteLevel").value = String(book?.favoriteLevel ?? (book?.favorite ? 1 : 0));
   if (book && !$("location").value) $("location").value = locationOf(book);
   if (!book && inventoryLocation) {
@@ -1313,6 +1406,7 @@ function getFormData(){
     condition:$("condition").value,
     read:$("read").checked,
     needsCompletion:$("needsCompletion").checked,
+    missingInSeries:$("missingInSeries").checked,
     favoriteLevel:Number($("favoriteLevel").value || 0),
     favorite:Number($("favoriteLevel").value || 0) > 0,
     tags:$("tags").value.trim(),
@@ -1394,7 +1488,7 @@ function renderResultsPage(){
     btn.innerHTML=`<strong>${escapeHtml(b.title || "Titre à compléter")}${Number(b.favoriteLevel||0)>0 ? `<span class="favorite-mark">${"★".repeat(Number(b.favoriteLevel||1))}</span>` : ""}</strong>
       <div class="meta">${escapeHtml(displayAuthorName(b.author))}${universeOf(b) ? " · "+escapeHtml(universeOf(b)) : ""}${b.volume ? " · tome "+escapeHtml(b.volume) : ""}</div>
       <div class="meta">${categoryLabel(b.category)} · ${escapeHtml(b.format)}${locationOf(b) ? " · 📍 "+escapeHtml(locationOf(b)) : ""}</div>
-      <span class="badge ${b.status}">${statusLabel(b.status)}</span>`;
+      <span class="badge ${b.status}">${b.missingInSeries&&b.status!=="buy"?"Manquant":statusLabel(b.status)}</span>`;
     btn.addEventListener("click",()=>openDetail(b.id,"resultsView"));
     box.appendChild(btn);
   });
@@ -1417,14 +1511,14 @@ function openDetail(id, originView="resultsView"){
     ["Collection",b.collection],["ISBN",b.isbn],["Éditeur",b.publisher],["Année",b.year],
     ["Pages",b.pages||""],["Langue",b.language||""],["Nombre d’exemplaires",b.quantity||1],
     ["Emplacement",locationOf(b)],["Statut",statusLabel(b.status)],["État",b.condition||""],
-    ["Lu",b.read?"Oui":"Non"],["À compléter",b.needsCompletion?"Oui":"Non"],
+    ["Lu",b.read?"Oui":"Non"],["Manquant dans la série",b.missingInSeries?"Oui":"Non"],["À compléter",b.needsCompletion?"Oui":"Non"],
     ["Favori",Number(b.favoriteLevel||0)>0 ? "★".repeat(Number(b.favoriteLevel||1)) : (b.favorite?"★":"Non")],
     ["Étiquettes",b.tags||""],["Commentaire",b.notes]
   ].filter(([,v])=>v!=="" && v!==undefined && v!==null);
 
   const groups=[
     ["Bibliographie",["Sous-titre","Auteur","Contributeurs","Catégorie","Univers","Cycle","Tome","Type","Collection","ISBN","Éditeur","Année","Pages","Langue"]],
-    ["Ma bibliothèque",["Nombre d’exemplaires","Emplacement","Statut","État","Lu","À compléter","Favori","Étiquettes","Commentaire"]]
+    ["Ma bibliothèque",["Nombre d’exemplaires","Emplacement","Statut","État","Lu","Manquant dans la série","À compléter","Favori","Étiquettes","Commentaire"]]
   ];
 
   let html="";
@@ -2074,6 +2168,8 @@ $("missingBtn").addEventListener("click",()=>{renderMissing();showView("missingV
 $("upcomingBtn").addEventListener("click",()=>{renderUpcoming();showView("upcomingView");});
 $("seriesSearchInput").addEventListener("input",renderSeries);
 $("missingSearchInput").addEventListener("input",renderMissing);
+$("missingUniverseSelect").addEventListener("change",refreshMissingSelectors);
+$("createMissingBtn").addEventListener("click",createMissingVolumes);
 $("upcomingSearchInput").addEventListener("input",renderUpcoming);
 $("universe").addEventListener("input",refreshSuggestions);
 $("closeSeriesDialog").addEventListener("click",()=>$("seriesDialog").close());
