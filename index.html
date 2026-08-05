@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 3.1.4</title>
+  <title>BiblioPerso 3.1.5</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -181,7 +181,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 3.1.4 · balayage des onglets</p>
+      <p class="subtitle">Version 3.1.5 · ordre des tomes corrigé</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -698,7 +698,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"3.1.4",
+    version:"3.1.5",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1350,8 +1350,14 @@ function compareBooksForDisplay(a,b){
   const ub=normalize(universeOf(b));
   if(ua!==ub) return ua.localeCompare(ub,"fr",{numeric:true});
 
-  const va=parseFloat(String(a.volume||"").replace(",","."));
-  const vb=parseFloat(String(b.volume||"").replace(",","."));
+  const extractVolumeNumber=(book)=>{
+    const direct=String(book.volume||"").replace(",",".").match(/\d+(?:\.\d+)?/);
+    if(direct) return Number(direct[0]);
+    const fallback=String(book.title||"").match(/\b(?:tome|t\.|vol(?:ume)?\.?)\s*(\d+(?:[.,]\d+)?)/i);
+    return fallback ? Number(fallback[1].replace(",",".")) : NaN;
+  };
+  const va=extractVolumeNumber(a);
+  const vb=extractVolumeNumber(b);
   const aHas=Number.isFinite(va);
   const bHas=Number.isFinite(vb);
 
@@ -1367,7 +1373,7 @@ function filteredBooksForSearch(){
     const textMatch=!q || [b.title,b.author,universeOf(b),cycleOf(b),b.isbn,b.collection,b.publisher,b.tags]
       .some(x=>normalize(x).includes(q));
     return textMatch && matchesFilters(b);
-  }).sort((a,b)=>String(a.title||"").localeCompare(String(b.title||""),"fr"));
+  }).sort(compareBooksForDisplay);
 }
 
 function renderResultsPage(){

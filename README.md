@@ -1,4 +1,4 @@
-# BiblioPerso 3.1.4 — PWA iPhone
+# BiblioPerso 3.1.5 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -231,3 +231,10 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - indicateur « 1 / 3 », « 2 / 3 », « 3 / 3 » ;
 - les boutons d’onglets restent utilisables ;
 - les informations déjà saisies restent intactes.
+
+
+## Correctif 3.1.5
+- la liste BD est réellement classée par univers puis numéro de tome ;
+- correction du tri utilisé par la page Résultats ;
+- les numéros de tome enregistrés comme texte sont reconnus ;
+- pour Alix, l’ordre attendu est désormais tome 1, 2, 3, 4, 5, 6, 7.
