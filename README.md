@@ -1,4 +1,4 @@
-# BiblioPerso 4.0.2 — PWA iPhone
+# BiblioPerso 4.0.3 — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -281,4 +281,13 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - « Détecter les tomes manquants » enregistre aussi automatiquement ce total ;
 - toucher un tome manquant ouvre sa fiche ;
 - le titre saisi est maintenant enregistré ;
+- après validation, retour direct à la collection concernée.
+
+
+## Correctif 4.0.3
+- l’auteur n’est plus obligatoire pour une fiche manquante ;
+- le bouton Enregistrer ne reste plus bloqué silencieusement ;
+- un message indique clairement si le titre manque ;
+- le titre d’un tome manquant est bien sauvegardé ;
+- le nombre total saisi dans la fiche est propagé à toute la collection ;
 - après validation, retour direct à la collection concernée.

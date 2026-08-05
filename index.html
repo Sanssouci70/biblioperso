@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 4.0.2</title>
+  <title>BiblioPerso 4.0.3</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -194,7 +194,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 4.0.2 · total et titres des manquants</p>
+      <p class="subtitle">Version 4.0.3 · enregistrement des manquants corrigé</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -348,7 +348,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
       </div>
 
       <div id="metadataStatus" class="metadata-status hidden"></div><div id="metadataSources" class="metadata-sources hidden"></div>
-      <form id="bookForm" class="form-grid">
+      <form id="bookForm" class="form-grid" novalidate>
         <input type="hidden" id="bookId">
 
         <div class="tabs" role="tablist">
@@ -370,7 +370,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
             </select>
           </label>
           <label>Titre de l’ouvrage *<input id="title" required placeholder="Ex. L’Empereur de Chine"></label>
-          <label>Auteur *<input id="author" required></label>
+          <label>Auteur<input id="author" placeholder="Peut être complété plus tard"></label>
           <label>Univers / série principale
             <input id="universe" list="universeSuggestions" placeholder="Ex. Thorgal">
             <datalist id="universeSuggestions"></datalist>
@@ -439,6 +439,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
           <label>Commentaire<textarea id="notes" rows="3"></textarea></label>
         </section>
 
+        <div id="formSaveStatus" class="metadata-status hidden"></div>
         <div class="form-actions">
           <button type="button" id="deleteBtn" class="danger hidden">Supprimer</button>
           <button type="submit" class="primary">Enregistrer</button>
@@ -744,7 +745,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"4.0.2",
+    version:"4.0.3",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -1585,7 +1586,9 @@ function openForm(book=null) {
   }
   $("bookForm").reset();
   $("metadataStatus").className="metadata-status hidden";
-  $("metadataStatus").textContent=""; $("metadataSources").className="metadata-sources hidden"; $("metadataSources").innerHTML="";
+  $("metadataStatus").textContent="";
+  $("formSaveStatus").className="metadata-status hidden";
+  $("formSaveStatus").textContent=""; $("metadataSources").className="metadata-sources hidden"; $("metadataSources").innerHTML="";
   $("formTitle").textContent = book ? "Modifier l’ouvrage" : "Ajouter un ouvrage";
   $("deleteBtn").classList.toggle("hidden", !book);
   currentBookId = book?.id || null;
@@ -2459,8 +2462,34 @@ document.querySelectorAll(".stat-card").forEach(btn=>btn.addEventListener("click
 
 $("bookForm").addEventListener("submit",e=>{
   e.preventDefault();
+
+  const saveStatus=$("formSaveStatus");
+  saveStatus.className="metadata-status hidden";
+  saveStatus.textContent="";
+
+  if(!$("title").value.trim()){
+    activateTab("generalTab");
+    saveStatus.className="metadata-status error";
+    saveStatus.innerHTML="<strong>Titre obligatoire.</strong><br>Saisis le titre de l’ouvrage avant d’enregistrer.";
+    $("title").focus();
+    window.scrollTo({top:0,behavior:"smooth"});
+    return;
+  }
   const data=getFormData();
   if(data.location) localStorage.setItem("biblioperso_last_location", data.location);
+
+  const enteredTotal=Number(data.publishedVolumes||0);
+  if(enteredTotal>0 && data.universe){
+    const totals=getCollectionTotals();
+    totals[normalize(data.universe)]=enteredTotal;
+    localStorage.setItem(COLLECTION_TOTALS_KEY,JSON.stringify(totals));
+
+    books.forEach(book=>{
+      if(normalize(universeOf(book))===normalize(data.universe)){
+        book.publishedVolumes=String(enteredTotal);
+      }
+    });
+  }
 
   const duplicateByIsbn = data.isbn && books.find(b=>b.id!==data.id && cleanIsbn(b.isbn)===cleanIsbn(data.isbn));
   if(duplicateByIsbn){
@@ -2491,6 +2520,8 @@ $("bookForm").addEventListener("submit",e=>{
     }
   }
   save(false);
+  $("formSaveStatus").className="metadata-status success";
+  $("formSaveStatus").innerHTML="<strong>Modifications enregistrées.</strong>";
   if(inventoryLocation){
     $("inventoryCount").textContent = books.filter(b=>locationOf(b)===inventoryLocation.location).length - inventoryStartCount;
     inventoryAutoScan=false;
@@ -2498,6 +2529,8 @@ $("bookForm").addEventListener("submit",e=>{
     $("startHtml5ScanBtn")?.classList.remove("hidden");
     showView("inventoryView");
   } else if(editReturnView==="collectionDetailView" && currentCollectionUniverse){
+    const savedTotal=savedCollectionTotal(currentCollectionUniverse);
+    if(savedTotal) $("collectionMaxVolume").value=String(savedTotal);
     renderCollections();
     renderCollectionDetail();
     showView("collectionDetailView");
