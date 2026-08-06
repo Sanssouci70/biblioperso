@@ -1,4 +1,4 @@
-# BiblioPerso 5.0.2 Cloud — PWA iPhone
+# BiblioPerso 5.0.3 Cloud — PWA iPhone
 
 Cette version est prête à être publiée sur une adresse HTTPS, puis installée sur l’écran d’accueil d’un iPhone.
 
@@ -324,3 +324,10 @@ Le mode « Photographier le code-barres » est souvent plus fiable qu’un flux 
 - boutons explicitement déclarés comme actions simples ;
 - messages visibles pendant la création, la connexion et les erreurs ;
 - validation de l’adresse e-mail et du mot de passe.
+
+
+## Correctif 5.0.3
+- ajout effectif des bibliothèques Firebase App, Authentication et Firestore ;
+- correction de `firebase === undefined` ;
+- la création de compte peut maintenant atteindre Firebase Authentication ;
+- message d’erreur explicite si le SDK ne se charge pas.

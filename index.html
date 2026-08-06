@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4efe7">
-  <title>BiblioPerso 5.0.2 Cloud</title>
+  <title>BiblioPerso 5.0.3 Cloud</title>
     <style>
 *{box-sizing:border-box} :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1b18;background:#f4efe7}
 body{margin:0;min-height:100vh;background:#f4efe7}.app-header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;background:rgba(244,239,231,.96);backdrop-filter:blur(12px);border-bottom:1px solid #d8d0c4}
@@ -201,7 +201,7 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   <header class="app-header">
     <div>
       <h1>BiblioPerso</h1>
-      <p class="subtitle">Version 5.0.2 · création de compte corrigée</p>
+      <p class="subtitle">Version 5.0.3 · bibliothèques Firebase chargées</p>
     </div>
     <button id="menuBtn" class="icon-btn" aria-label="Menu">☰</button>
   </header>
@@ -720,6 +720,10 @@ details summary{cursor:pointer;font-weight:700;margin-bottom:12px}
   </dialog>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore-compat.js"></script>
+
 <script>
 const STORAGE_KEY = "biblioperso_books_v02";
 const SNAPSHOT_KEY = "biblioperso_snapshots_v07";
@@ -789,7 +793,7 @@ function renderSnapshots(){
 function downloadBackup(){
   const payload = {
     app:"BiblioPerso",
-    version:"5.0.2",
+    version:"5.0.3",
     exportedAt:new Date().toISOString(),
     books
   };
@@ -2693,7 +2697,7 @@ function cloudMetaRef(uid){return cloudDb.collection("users").doc(uid).collectio
 async function initializeCloud(){
   const config=loadFirebaseConfig(); fillFirebaseConfigForm();
   if(!firebaseConfigComplete(config)){cloudSetStatus("Cloud non configuré.");return false}
-  if(typeof firebase==="undefined"){cloudSetStatus("Firebase n’a pas été chargé.","error");return false}
+  if(typeof firebase==="undefined"){cloudSetStatus("Les bibliothèques Firebase ne se sont pas chargées. Recharge la page.","error");console.error("Firebase SDK absent");return false}
   try{
     if(!cloudFirebaseApp){
       cloudFirebaseApp=firebase.apps.length?firebase.app():firebase.initializeApp(config);

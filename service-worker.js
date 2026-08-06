@@ -1,4 +1,4 @@
-const CACHE = "biblioperso-v502";
+const CACHE = "biblioperso-v503";
 const ASSETS = [
   "./",
   "./index.html",
